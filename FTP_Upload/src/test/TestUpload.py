@@ -200,7 +200,8 @@ def deleteTestImages():
 
 def buildImages(rootPath, day, location, time, startingSeq, count):
     """Build the incoming directories and files to simulate the cameras
-    dropping files into the ftp_upload machine
+    dropping files into the ftp_upload machine using a two-level directory
+    structure ("yyyy-mm-dd/location")
     :param rootPath: Full pathname of the root directory under which the images
     will be built.
     :param day: String representing the name of the 'date' directory.
@@ -221,6 +222,29 @@ def buildImages(rootPath, day, location, time, startingSeq, count):
         
     for i in range(startingSeq, startingSeq+count):
         filepath = os.path.join(locpath, time + "-%05d" % i + ".jpg")
+        shutil.copy("SampleImage.jpg", filepath)
+
+def build1LevelImages(rootPath, day, location, time, startingSeq, count):
+    """Build the incoming directories and files to simulate the cameras
+    dropping files into the ftp_upload machine using a one-level directory
+    structure ("yyyy-mm-dd_location")
+    :param rootPath: Full pathname of the root directory under which the images
+    will be built.
+    :param day: String representing the 'date' portion of the directory name
+    ("yyyy-mm-dd").
+    :param location: String representing the location portion of the one-level
+    directory name.
+    :param time: String representing the time-based portion of the image filename.
+    :param startingSeq: The starting sequence number in the image filenames.
+    :param count: The number of images files to generate.
+    """
+
+    dirpath = os.path.join(moduleUnderTest.incoming_location, day+"_"+location)
+    if not os.path.exists(dirpath):
+        os.mkdir(dirpath)
+            
+    for i in range(startingSeq, startingSeq+count):
+        filepath = os.path.join(dirpath, time + "-%05d" % i + ".jpg")
         shutil.copy("SampleImage.jpg", filepath)
 
 
@@ -267,17 +291,22 @@ class Test(unittest.TestCase):
     def testUploadOfTodayAndPrevious(self):
         self.uploadAndValidate(today=True, genFiles=True)
             
+    def testUploadOfTodayAndPrevious1Level(self):
+        self.uploadAndValidate(today=True, genFiles=True, oneLevel=True)
+            
     def testUploadOfPreviousDays(self):
         self.uploadAndValidate(today=False, genFiles=True)
             
     def testNoWorkToDo(self):
         self.uploadAndValidate(today=True, genFiles=False)
         
-    def uploadAndValidate(self, today, genFiles):
+    def uploadAndValidate(self, today, genFiles, oneLevel=False):
         
         # shell command to do recursive ls then use sed to strip out the date and time.
         # Strip out the link count as well, as it seems to be broken sometimes
-        ls_sed = "ls -lR | sed -e \"s/[A-Z][a-z][a-z] [0-9 ][0-9] [0-9][0-9]:[0-9][0-9] //\" -e \"s/\\(^..........\\) \\+[0-9]\\+/\\1/\""
+        #ls_sed = "ls -lR | sed -e \"s/[A-Z][a-z][a-z] [0-9 ][0-9] [0-9][0-9]:[0-9][0-9] //\" -e \"s/\\(^..........\\) \\+[0-9]\\+/\\1/\""
+        
+        ls_sed = "ls -sR"
         
         # capture the original state of the incoming files tree (empty)
         incoming = re.sub("/", "\\\\", ftp_upload.incoming_location)
@@ -294,12 +323,32 @@ class Test(unittest.TestCase):
             buildImages(ftp_upload.incoming_location, "2013-06-30", "uphill", "11-00-02", 1, 10)
             buildImages(ftp_upload.incoming_location, "2013-06-29", "downhill", "10-00-00", 1, 10)
             buildImages(ftp_upload.incoming_location, "2013-06-29", "uphill", "10-00-02", 1, 10)
-
+            
         # capture the state of the incoming files tree
         incoming = re.sub("/", "\\\\", ftp_upload.incoming_location)
         exitStatus = subprocess.call("cd " + incoming + " & "+ls_sed+" > ..\\incoming.ls", shell=True)
         assert exitStatus == 0
            
+        # if oneLevel is set, mix in one-level directory paths with the two-level paths
+        #
+        if oneLevel:
+            shutil.rmtree(os.path.join(ftp_upload.incoming_location, 
+                                       "2013-07-01", "downhill"), False)
+            shutil.rmtree(os.path.join(ftp_upload.incoming_location, 
+                                       "2013-07-01", "uphill"), False)
+            shutil.rmtree(os.path.join(ftp_upload.incoming_location, 
+                                       "2013-06-30", "downhill"), False)
+            build1LevelImages(ftp_upload.incoming_location, "2013-07-01", "downhill", "12-00-00", 1, 10)
+            build1LevelImages(ftp_upload.incoming_location, "2013-07-01", "uphill", "12-00-02", 1, 10)
+            build1LevelImages(ftp_upload.incoming_location, "2013-06-30", "downhill", "11-00-00", 1, 10)
+
+            # capture the state of the incoming files tree with one-level
+            # directories just for eyeball check
+            incoming = re.sub("/", "\\\\", ftp_upload.incoming_location)
+            exitStatus = subprocess.call("cd " + incoming + " & "+ls_sed+" > ..\\incoming1L.ls", shell=True)
+            assert exitStatus == 0
+           
+
         if today:
             ForceDate.setForcedDate(datetime.date(2013,7,1))
         else:

@@ -82,11 +82,13 @@ def change_create_ftp_dir(ftp_connection, dirname):
         
     return
 
+date_re = "([0-9]{4})-([0-9]{2})-([0-9]{2})"
+
 def dir2date(indir):
-    #extract date from indir style z:\\ftp\\12-01-2
-    searchresult = re.search(r".*/([0-9]{4})-([0-9]{2})-([0-9]{2})", indir)
-    if searchresult == None:     #extract date from indir style 12-01-2
-        searchresult = re.search(r".*([0-9]{4})-([0-9]{2})-([0-9]{2})", indir)
+    #extract date from indir style z:\\ftp\\2012-01-02
+    searchresult = re.search(r".*/"+date_re+"$", indir)
+    if searchresult == None:     #extract date from indir style 2012-01-02
+        searchresult = re.search(r".*"+date_re+"$", indir)
         
     if searchresult != None:
         year= int(searchresult.group(1))
@@ -99,6 +101,53 @@ def dir2date(indir):
 
     return (year, month, day)
 
+loc_re = "_(.+)"
+
+def dir2date_loc(indir):
+    #extract date from indir style z:\\ftp\\2012-01-02
+    sr = re.search(r".*/"+date_re+loc_re+"$", indir)
+    if sr == None:     #extract date from indir style 2012-01-02
+        sr = re.search(r".*"+date_re+loc_re+"$", indir)
+        
+    if sr != None:
+        date= sr.group(1) +"-"+ sr.group(2) +"-"+ sr.group(3)
+        loc = sr.group(4)
+    else:
+        date = None
+        loc = None
+
+    return (date, loc)
+
+# check the incoming directory for directories of the form "yyyy-mm-dd_location"
+# and return a list containing a tuple ("yyyy-mm-dd", "location") for each
+# directory of that form
+#
+def get_datelocdirs(in_path):
+    dirlist = []
+    for d in os.listdir(in_path):
+        (date,loc) = dir2date_loc(d)
+        if date:
+            if os.path.isdir(os.path.join(in_path, date+"_"+loc)):               
+                dirlist.append((date,loc))
+    return dirlist    
+
+# at the incoming location with a list of date_loc dir tuples of the form
+# ("yyyy-mm-dd", "location"), move each file in each directory of the form
+# yyyy-mm-dd_location/filename to its normalized path,
+# yyyy-mm-dd/location/filename.  Create destination directories as needed
+# and when done remove original date_loc directories if empty
+# 
+def normalize_paths(in_path, datelocdirs):
+    logging.info("Starting normalize_paths()")
+    try:
+        for (date, loc) in datelocdirs:
+            imgdirpath = os.path.join(in_path, date+"_"+loc)
+            for f in os.listdir(imgdirpath):
+                os.renames(os.path.join(imgdirpath, f), os.path.join(in_path,
+                        date, loc, f))
+    except Exception, e:
+        logging.error("Unexpected exception in normalize_paths(): " + repr(e))
+    logging.info("Returning from normalize_paths()")
 
 def get_daydirs(location):        
     daydirlist = os.listdir(location)
@@ -385,9 +434,16 @@ def main():
         process_previous_days_thread = threading.Thread(target=storedays, args=())
 
         purge_thread = threading.Thread(target=purge_old_images, args=())
-
         
         while True:
+            
+            # normalize the paths of image files that arrived in the form 
+            # yyyy-mm-dd_location/imagename.jpg to the form 
+            # yyyy-mm-dd/location/imagename.jpg
+            #
+            datelocdirs = get_datelocdirs(incoming_location)
+            if datelocdirs:
+                normalize_paths(incoming_location, datelocdirs)
             
             daydirs = get_daydirs(incoming_location)
             
