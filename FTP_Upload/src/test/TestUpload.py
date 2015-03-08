@@ -33,6 +33,7 @@ import re
 import logging
 import random
 import testsettings
+import localsettings
 
 class ForceDate(datetime.date):
     """Force datetime.date.today() to return a specifiable date for testing
@@ -173,24 +174,20 @@ class MockFTP(ftplib.FTP):
 
 ftp_testing_root = testsettings.ftp_testing_root
 
-moduleUnderTest = ftp_upload
-
 def deleteTestImages():
     """Set up the directories on the local machine under ftp_testing_root
     to represent the dirs on the ftp_upload machine and the Cloud server
     """
-    moduleUnderTest = ftp_upload
+    shutil.rmtree(localsettings.incoming_location, True, None)
+    os.mkdir(localsettings.incoming_location)
     
-    shutil.rmtree(moduleUnderTest.incoming_location, True, None)
-    os.mkdir(moduleUnderTest.incoming_location)
+    shutil.rmtree(localsettings.processed_location, True, None)
+    os.mkdir(localsettings.processed_location)
     
-    shutil.rmtree(moduleUnderTest.processed_location, True, None)
-    os.mkdir(moduleUnderTest.processed_location)
-    
-    if moduleUnderTest.ftp_destination[0] == "/":
-        dest = moduleUnderTest.ftp_destination[1:]
+    if localsettings.ftp_destination[0] == "/":
+        dest = localsettings.ftp_destination[1:]
     else:
-        dest = moduleUnderTest.ftp_destination
+        dest = localsettings.ftp_destination
     cloudTestDir = os.path.join(ftp_testing_root, dest)
     shutil.rmtree(cloudTestDir, True, None)
     os.mkdir(cloudTestDir)
@@ -211,7 +208,7 @@ def buildImages(rootPath, day, location, time, startingSeq, count):
     :param count: The number of images files to generate.
     """
 
-    datepath = os.path.join(moduleUnderTest.incoming_location, day)
+    datepath = os.path.join(localsettings.incoming_location, day)
     if not os.path.exists(datepath):
         os.mkdir(datepath)
     
@@ -230,24 +227,22 @@ class Test(unittest.TestCase):
 
     def setUp(self):
 
-        module = ftp_upload
-        
         # set up test for log file renaming
         bn = "ftp_upload"
         ext = ".log"
         if not os.path.exists(bn+ext):
             open(bn+ext, "w").close
 
-        module.set_up_logging()
+        ftp_upload.set_up_logging()
         
         # Set up the testing values for the ftp_upload global vars
         #
-        module.incoming_location = testsettings.incoming_location
-        module.processed_location = testsettings.processed_location          
-        module.ftp_server = testsettings.ftp_server
-        module.ftp_username = testsettings.ftp_username
-        module.ftp_password = testsettings.ftp_password
-        module.ftp_destination = testsettings.ftp_destination # remember to start with /
+        localsettings.incoming_location = testsettings.incoming_location
+        localsettings.processed_location = testsettings.processed_location          
+        localsettings.ftp_server = testsettings.ftp_server
+        localsettings.ftp_username = testsettings.ftp_username
+        localsettings.ftp_password = testsettings.ftp_password
+        localsettings.ftp_destination = testsettings.ftp_destination # remember to start with /
         
        
         # hook the date() method
@@ -280,7 +275,7 @@ class Test(unittest.TestCase):
         ls_sed = "ls -lR | sed -e \"s/[A-Z][a-z][a-z] [0-9 ][0-9] [0-9][0-9]:[0-9][0-9] //\" -e \"s/\\(^..........\\) \\+[0-9]\\+/\\1/\""
         
         # capture the original state of the incoming files tree (empty)
-        incoming = re.sub("/", "\\\\", ftp_upload.incoming_location)
+        incoming = re.sub("/", "\\\\", localsettings.incoming_location)
         exitStatus = subprocess.call("cd " + incoming + " & "+ls_sed+" > ..\\orig.ls", shell=True)
         assert exitStatus == 0
 
@@ -288,15 +283,15 @@ class Test(unittest.TestCase):
         # dropping files into the ftp_upload machine
         #
         if genFiles:
-            buildImages(ftp_upload.incoming_location, "2013-07-01", "downhill", "12-00-00", 1, 10)
-            buildImages(ftp_upload.incoming_location, "2013-07-01", "uphill", "12-00-02", 1, 10)
-            buildImages(ftp_upload.incoming_location, "2013-06-30", "downhill", "11-00-00", 1, 10)
-            buildImages(ftp_upload.incoming_location, "2013-06-30", "uphill", "11-00-02", 1, 10)
-            buildImages(ftp_upload.incoming_location, "2013-06-29", "downhill", "10-00-00", 1, 10)
-            buildImages(ftp_upload.incoming_location, "2013-06-29", "uphill", "10-00-02", 1, 10)
+            buildImages(localsettings.incoming_location, "2013-07-01", "downhill", "12-00-00", 1, 10)
+            buildImages(localsettings.incoming_location, "2013-07-01", "uphill", "12-00-02", 1, 10)
+            buildImages(localsettings.incoming_location, "2013-06-30", "downhill", "11-00-00", 1, 10)
+            buildImages(localsettings.incoming_location, "2013-06-30", "uphill", "11-00-02", 1, 10)
+            buildImages(localsettings.incoming_location, "2013-06-29", "downhill", "10-00-00", 1, 10)
+            buildImages(localsettings.incoming_location, "2013-06-29", "uphill", "10-00-02", 1, 10)
 
         # capture the state of the incoming files tree
-        incoming = re.sub("/", "\\\\", ftp_upload.incoming_location)
+        incoming = re.sub("/", "\\\\", localsettings.incoming_location)
         exitStatus = subprocess.call("cd " + incoming + " & "+ls_sed+" > ..\\incoming.ls", shell=True)
         assert exitStatus == 0
            
@@ -317,17 +312,17 @@ class Test(unittest.TestCase):
         SleepHook.removeCallback()
         
         # capture the state of the processed files tree
-        processed = re.sub("/", "\\\\", ftp_upload.processed_location)
+        processed = re.sub("/", "\\\\", localsettings.processed_location)
         exitStatus = subprocess.call("cd " + processed + " & "+ls_sed+" > ..\\processed.ls", shell=True)
         assert exitStatus == 0
         
         # capture the state of the cloud server files tree
-        cloud = re.sub("/", "\\\\", ftp_testing_root + ftp_upload.ftp_destination)
+        cloud = re.sub("/", "\\\\", ftp_testing_root + localsettings.ftp_destination)
         exitStatus = subprocess.call("cd " + cloud + " & "+ls_sed+" > ..\\cloud.ls", shell=True)
         assert exitStatus == 0
         
         # capture the final state of the incoming files tree
-        incoming = re.sub("/", "\\\\", ftp_upload.incoming_location)
+        incoming = re.sub("/", "\\\\", localsettings.incoming_location)
         exitStatus = subprocess.call("cd " + incoming + " & ls -lR > ..\\final.ls", shell=True)
         assert exitStatus == 0
               
@@ -352,11 +347,11 @@ class Test(unittest.TestCase):
         date = "2010-02-01"
         loc = "downhill"
         filename = "21-22-00-00999.jpg"
-        ftp_dir = ftp_upload.ftp_destination+"/"+date+"/"+loc
-        filepath = os.path.join(ftp_upload.incoming_location, date, loc, filename)
-        donepath = os.path.join(ftp_upload.processed_location, date, loc, filename)
+        ftp_dir = localsettings.ftp_destination+"/"+date+"/"+loc
+        filepath = os.path.join(localsettings.incoming_location, date, loc, filename)
+        donepath = os.path.join(localsettings.processed_location, date, loc, filename)
    
-        buildImages(ftp_upload.incoming_location, date, loc, "21-22-00", 999, 1)
+        buildImages(localsettings.incoming_location, date, loc, "21-22-00", 999, 1)
         ftp_upload.storefile(ftp_dir=ftp_dir, filepath=filepath, donepath=donepath, 
                              filename=filename, today=False)
         assert os.path.exists(donepath)

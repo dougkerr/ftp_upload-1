@@ -48,7 +48,8 @@ import localsettings
 
 # 3rd Party libraries not part of default Python and needs to be installed
 if localsettings.use_sftp==True:
-    import pysftp # pip install pysftp 
+    pass
+#    import pysftp # pip install pysftp 
 
 version_string = "1.6.0"
 
@@ -137,7 +138,7 @@ def connect_to_server():
     if localsettings.use_sftp==True:
         # SFTP Version
         try:
-            server_connection = pysftp.Connection(localsettings.ftp_server, username=localsettings.ftp_username,password=localsettings.ftp_password)
+#            server_connection = pysftp.Connection(localsettings.ftp_server, username=localsettings.ftp_username,password=localsettings.ftp_password)
             logging.debug("FTP_UPLOAD: Connected to %s", localsettings.ftp_server)
             logging.debug("FTP_UPLOAD:current directory is: %s", server_connection.pwd)
             logging.debug("FTP_UPLOAD:changing directory to: %s", localsettings.ftp_destination)
@@ -486,7 +487,7 @@ def main():
             logging.info("FTP_UPLOAD:Sleeping 1 minute for upload")
             logging.info("FTP_UPLOAD:Time is %s", time.ctime() )          
             try:
-                 time.sleep(localsettings.sleep_upload) # sleep
+                time.sleep(localsettings.sleep_upload) # sleep
                 
             # hitting Ctl-C to dump the thread stacks will interrupt
             # MainThread's sleep and raise IOError, so catch it here
