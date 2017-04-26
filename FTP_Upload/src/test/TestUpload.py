@@ -31,8 +31,10 @@ import ftplib
 import subprocess
 import logging
 import random
-import testsettings
 import sys
+import StringIO
+import ConfigParser
+
 
 class ForceDate(datetime.date):
     """Force datetime.date.today() to return a specifiable date for testing
@@ -170,31 +172,6 @@ class MockFTP(ftplib.FTP):
             else:
                 MockFTP.origFTP.storbinary(self, command, filehandle)
         
-
-ftp_testing_root = testsettings.ftp_testing_root
-ftp_testing_dest = testsettings.ftp_testing_dest
-
-moduleUnderTest = ftp_upload
-
-def deleteTestImages():
-    """Set up the directories on the local machine under ftp_testing_root
-    to represent the dirs on the ftp_upload machine and the Cloud server
-    """
-    moduleUnderTest = ftp_upload
-    
-    shutil.rmtree(moduleUnderTest.incoming_location, True, None)
-    os.mkdir(moduleUnderTest.incoming_location)
-    
-    shutil.rmtree(moduleUnderTest.processed_location, True, None)
-    os.mkdir(moduleUnderTest.processed_location)
-    
-    cloudTestDir = os.path.join(ftp_testing_root, ftp_testing_dest)
-    shutil.rmtree(cloudTestDir, True, None)
-    os.mkdir(cloudTestDir)
-#     print "ftp_testing_root =", ftp_testing_root
-#     print "cloudTestDir =", cloudTestDir
-
-
 def buildImages(rootPath, day, location, time, startingSeq, count):
     """Build the incoming directories and files to simulate the cameras
     dropping files into the ftp_upload machine
@@ -208,7 +185,7 @@ def buildImages(rootPath, day, location, time, startingSeq, count):
     :param count: The number of images files to generate.
     """
 
-    datepath = os.path.join(moduleUnderTest.incoming_location, day)
+    datepath = os.path.join(rootPath, day)
     if not os.path.exists(datepath):
         os.mkdir(datepath)
     
@@ -223,11 +200,26 @@ def buildImages(rootPath, day, location, time, startingSeq, count):
 
 class Test(unittest.TestCase):
     
+    module_under_test = ftp_upload
     origThreadList = None
+    ftp_testing_root = "ftp_testing_root_not_set"
+    ftp_testing_dest = "cloud"
 
     def setUp(self):
+        
+        mod = self.module_under_test
+        
+        # get the values from the config file
+        #
+        sect = "forcedsection"
+        conf_str = "[" + sect + "]\n"  + open("test.conf", 'r').read()
+        conf_fp = StringIO.StringIO(conf_str)
+        config = ConfigParser.SafeConfigParser()
+        config.readfp(conf_fp)
+        
+        self.ftp_testing_root = os.path.join(config.get(sect, "ftp_login_path"), 
+                                            config.get(sect, "ftp_testing_dir"))
 
-        module = ftp_upload
         
         # set up test for log file renaming
         bn = "ftp_upload"
@@ -235,26 +227,48 @@ class Test(unittest.TestCase):
         if not os.path.exists(bn+ext):
             open(bn+ext, "w").close
 
-        module.set_up_logging()
+        mod.set_up_logging()
         
         # Set up the testing values for the ftp_upload global vars
         #
-        module.incoming_location = testsettings.incoming_location
-        module.processed_location = testsettings.processed_location          
-        module.ftp_server = testsettings.ftp_server
-        module.ftp_username = testsettings.ftp_username
-        module.ftp_password = testsettings.ftp_password
-        module.ftp_destination = testsettings.ftp_destination # remember to start with /
+        mod.incoming_location = os.path.join(self.ftp_testing_root, "incoming")
+        mod.processed_location = os.path.join(self.ftp_testing_root, 
+                                              "processed")   
+        mod.ftp_server = "localhost"
+        mod.ftp_username = config.get(sect, "ftp_username")
+        mod.ftp_password = config.get(sect, "ftp_password")
+        # until this mis-feature is fixed, remember to start ftp_destination 
+        # with a "/"
+        mod.ftp_destination = os.path.join("/"+
+                                            config.get(sect, "ftp_testing_dir"),
+                                            self.ftp_testing_dest)
         
-       
         # hook the date() method
         datetime.date = ForceDate
         
         # set up clean test directories
-        deleteTestImages()
+        self.deleteTestImages()
         
         self.origThreadList = threading.enumerate()
         list(self.origThreadList)
+
+    def deleteTestImages(self):
+        """Set up the directories on the local machine under ftp_testing_root
+        to represent the dirs on the ftp_upload machine and the Cloud server
+        """
+        mod = self.module_under_test
+        
+        shutil.rmtree(mod.incoming_location, True, None)
+        os.mkdir(mod.incoming_location)
+        
+        shutil.rmtree(mod.processed_location, True, None)
+        os.mkdir(mod.processed_location)
+        
+        cloudTestDir = os.path.join(self.ftp_testing_root, 
+                                    self.ftp_testing_dest)
+        shutil.rmtree(cloudTestDir, True, None)
+        os.mkdir(cloudTestDir)
+
 
  
     def tearDown(self):
@@ -288,7 +302,7 @@ class Test(unittest.TestCase):
                  )
         
         inc = ftp_upload.incoming_location
-        troot= ftp_testing_root
+        troot= self.ftp_testing_root
         
         # capture the initial state of the incoming files tree (empty)
         out = open( troot + "/orig.ls", "w")
@@ -335,8 +349,9 @@ class Test(unittest.TestCase):
         
         # capture the state of the cloud server files tree
         out = open( troot + "/cloud.ls", "w")
-        exitStatus = subprocess.call(ls_sed, cwd=os.path.join(ftp_testing_root, 
-                                                              ftp_testing_dest),
+        exitStatus = subprocess.call(ls_sed, 
+                                     cwd=os.path.join(self.ftp_testing_root, 
+                                                      self.ftp_testing_dest),
                                      stdout=out, shell=True)
         assert exitStatus == 0  # captured server file tree after FTPing files
         
@@ -374,7 +389,8 @@ class Test(unittest.TestCase):
         filepath = os.path.join(ftp_upload.incoming_location, date, loc, filename)
         donepath = os.path.join(ftp_upload.processed_location, date, loc, filename)
    
-        ftp_date_dir = os.path.join(ftp_testing_root, ftp_testing_dest, date)
+        ftp_date_dir = os.path.join(self.ftp_testing_root, 
+                                    self.ftp_testing_dest, date)
         os.mkdir(ftp_date_dir)
         buildImages(ftp_upload.incoming_location, date, loc, "21-22-00", 999, 1)
         ftp_upload.storefile(ftp_dir=ftp_dir, filepath=filepath, donepath=donepath, 

@@ -9,13 +9,14 @@ standard testing framework for Python, and is included in the Python
 distribution as the `unittest` library module.
 
 The test code expects a local FTP server to be running on the test
-machine so that FTP_Upload can upload files via FTP as it would
+machine and an FTP account set up for testing
+so that FTP_Upload can upload files via FTP as it would
 during normal operation, and the uploaded files along with their 
 directory structure can be verified for correctness by the test code.
 
-The tests set up an incoming directory for FTP_Upload to be used
+The tests set up an "incoming" directory for FTP_Upload to be used
 as the root of the file tree into which 
-images are placed with appropriate pathnames, i.e., in the form
+images are placed with appropriate pathnames, i.e., in the form,
 
 >
 >*incoming_directory*/*date*/*location*/*image_name*.jpg
@@ -28,67 +29,87 @@ can be uploaded to the cloud server.
 The tests also set up a "processed" directory into which 
 FTP_Upload will place the images (with the same pathname
 structure) once the images have been uploaded to the local test
-FTP ("cloud") server.
+FTP server.
 
-Finally, the test code sets up a directory to be the destination
+Finally, the test code sets up a "cloud" directory to be the destination
 directory that the local test FTP server will use as the root of the file
-tree created by the process of FTP_Upload uploading the test
+tree into which image files will be deposited 
+by the process of FTP_Upload uploading the test
 image files.
+
+All three of the above directories will be set up under a single "testing root" 
+directory.
 
 ### Test Setup and Configuration ###
 
 #### Configuration Variables ####
 
-The configuration variables for the tests are found in 
-`FTP_Upload/src/test/testsettings.py`.
+The configuration settings for the tests are placed in 
+`FTP_Upload/src/test/test.conf`.  You can copy the sample configuration file,
+`test_example.conf` to `test.conf` and edit the example settings so that
+they reflect your testing setup.  
 
-The `ftp_testing_root` variable should be set to the full
-path of the directory in the test machine's file system under
-which all the test files will be written.  As a safety measure,
+The configuration settings file is made up of name-value pairs in the form,
+
+>
+>*name* = *value*
+>
+
+The name must start at the left margin (no indentation), and the value
+part of the pair is entered without quotation marks.  Whitespace is optional on 
+either side of the equals sign, and leading and trailing spaces are removed from
+the value.
+
+The `ftp_login_path` configuration item needs to be set to the full path
+(in the file system of the local machine)
+of the FTP login directory of the test FTP account.
+
+The `ftp_testing_dir` item should be set to the
+path of the directory under
+which all the test files will be written (the "testing root" mentioned above)
+relative to the `ftp_login_path`.  As a safety measure,
 this directory must already exist 
-in order for the tests to run. All other test directories, e.g.,
-the incoming, processed and FTP destination directories, will be
-created under the `ftp_testing_root` as needed by the test code or 
-by FTP_Upload during the test runs.
-
-The `ftp_server` can be left set to the default `localhost`,
-since the FTP server is expected to be running directly on the test
-machine.
+in order for the tests to run. All other test directories, i.e.,
+the incoming, processed and cloud directories, will be
+created under the `ftp_testing_dir` as needed by the test code or 
+by FTP_Upload during the test runs.  If the FTP testing root directory
+should be the test FTP login directory, set the `ftp_testing_dir` to "."
+(no quotes).
 
 The `ftp_username` and `ftp_password` can be left as they are or
 changed, as long as a corresponding user name and password are set
-up on the local FTP server.  Under Linux, it is probably easiest to
+up on the local FTP server.  Under Linux, it may be easiest to
 set the user name and password to that of the user running the tests,
-and set up the `ftp_testing_root` to point to somewhere under that
+and set up the `ftp_testing_dir` to point to somewhere under that
 user's home directory.
 
-The `ftp_destination` variable is the path from the test
-FTP login directory to the the FTP destination directory (the root 
-of the tree into which files will be written on the cloud server/local
-test FTP server).  Even though this is a relative path, it needs to
-start with "/".  This is a known bug/feature.
+It is essential that both the user account under which the tests are being
+run and the test FTP account that is used to upload files have permissions
+to read and write all files and directories in the tree rooted at 
+`ftp_testing_dir`.  See the next section for more information.
+
 
 #### Local FTP Server ####
 
 As mentioned above, there must be an FTP server set up on the test
 machine so that FTP_Upload can actually transfer files using FTP.
 
-For a Windows test machine, we recommend using FileZilla Server
-for ease of installation and configuration, though
-any FTP server should work.
+For a Linux test machine, we recommend ProFTPd as we have tested successfully
+with it and it is also the FTP server currently in use at DreamHost.
 
-For a Linux test machine, we recommend ProFTPd, due to the fact that
-it will accept a local relative directory name that begins with a "/".
-This is necessary due to the bug mentioned above relative to the
-`ftp_destination` variable.
+For a Windows test machine, we have no server recommendation at this writing.
+We have tested with FileZilla, which has easy installation and configuration,
+but also allows multiple-level directory paths to be created in a single
+command, e.g., MKDIR a/b/c where none of a, b or c exist before the command
+is given.  This is not the behavior of ProFTPd, this FileZilla behavior
+masked a bug in testing of FTP_Upload until this was understood.
 
 You will need to have an account set up on the local FTP server for the test code
-that has the same user name and password as have been configured in 
-`testsettings.py`. 
+that has the same user name and password as are configured in `test.conf`. 
 Both the account under which the tests are being run, and the testing account
-on the local test FTP server must have all permissions on the `ftp_testing_root`
+on the local test FTP server must have all permissions on the `ftp_testing_dir`
 directory.  That is, both accounts must be able to read, write,
-create files and directories, and delete files and directories.
+create and delete files and directories.
 As mentioned above, it's probably easiest to configure the test setup
 such that the same account is used to both run the tests, and to log
 into the FTP server.
@@ -98,7 +119,7 @@ into the FTP server.
 The test code uses three Unix/Linux utilities, `ls`, `sed` and `diff`, 
 to help analyze the results produced by testing FTP_Upload.
 Therefore, these three commands must be available in the execution path 
-(`PATH` variable) of the test process.  If the tests are being run
+(`PATH` environment variable) of the test process.  If the tests are being run
 under Windows, these are not part of the standard command set.
 
 When running under Windows, the simplest way to 
@@ -135,7 +156,7 @@ or on the Windows command line,
 
 	set PYTHONPATH ..
 	
-If you are using Eclipse, it will set the `PYTHONPATH` variable for you.
+If you are using Eclipse, it will set the `PYTHONPATH` automatically.
 
 ### Running the Tests ###
 
