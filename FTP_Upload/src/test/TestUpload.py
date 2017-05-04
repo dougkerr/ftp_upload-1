@@ -202,46 +202,40 @@ class Test(unittest.TestCase):
     
     module_under_test = ftp_upload
     origThreadList = None
-    ftp_testing_root = "ftp_testing_root_not_set"
-    ftp_testing_dest = "cloud"
 
     def setUp(self):
         
         mod = self.module_under_test
         
+        test_conf = "test.conf"
+        
         # get the values from the config file
         #
         sect = "forcedsection"
-        conf_str = "[" + sect + "]\n"  + open("test.conf", 'r').read()
+        conf_str = "[" + sect + "]\n"  + open(test_conf, 'r').read()
         conf_fp = StringIO.StringIO(conf_str)
         config = ConfigParser.SafeConfigParser()
         config.readfp(conf_fp)
         
-        self.ftp_testing_root = os.path.join(config.get(sect, "ftp_login_path"), 
-                                            config.get(sect, "ftp_testing_dir"))
+        # set up instance vars
+        #
+        self.ftp_testing_root = config.get(sect, "ftp_testing_root")
+        ftp_testing_dest = config.get(sect, "ftp_testing_dest")
+        # full path of FTP destination directory
+        self.ftp_destination_path = os.path.join(self.ftp_testing_root, 
+                                                 ftp_testing_dest)
 
-        
         # set up test for log file renaming
         bn = "ftp_upload"
         ext = ".log"
         if not os.path.exists(bn+ext):
             open(bn+ext, "w").close
-
-        mod.set_up_logging()
-        
+            
         # Set up the testing values for the ftp_upload global vars
         #
-        mod.incoming_location = os.path.join(self.ftp_testing_root, "incoming")
-        mod.processed_location = os.path.join(self.ftp_testing_root, 
-                                              "processed")   
-        mod.ftp_server = "localhost"
-        mod.ftp_username = config.get(sect, "ftp_username")
-        mod.ftp_password = config.get(sect, "ftp_password")
-        # until this mis-feature is fixed, remember to start ftp_destination 
-        # with a "/"
-        mod.ftp_destination = os.path.join("/"+
-                                            config.get(sect, "ftp_testing_dir"),
-                                            self.ftp_testing_dest)
+        assert mod.get_config(test_conf) == True
+        
+        mod.set_up_logging()
         
         # hook the date() method
         datetime.date = ForceDate
@@ -258,16 +252,14 @@ class Test(unittest.TestCase):
         """
         mod = self.module_under_test
         
-        shutil.rmtree(mod.incoming_location, True, None)
-        os.mkdir(mod.incoming_location)
+        shutil.rmtree(mod.cfg.incoming_location, True, None)
+        os.mkdir(mod.cfg.incoming_location)
         
-        shutil.rmtree(mod.processed_location, True, None)
-        os.mkdir(mod.processed_location)
+        shutil.rmtree(mod.cfg.processed_location, True, None)
+        os.mkdir(mod.cfg.processed_location)
         
-        cloudTestDir = os.path.join(self.ftp_testing_root, 
-                                    self.ftp_testing_dest)
-        shutil.rmtree(cloudTestDir, True, None)
-        os.mkdir(cloudTestDir)
+        shutil.rmtree(self.ftp_destination_path, True, None)
+        os.mkdir(self.ftp_destination_path)
 
 
  
@@ -301,7 +293,7 @@ class Test(unittest.TestCase):
                   "[a-zA-Z0-9_-]\\+ \\+//\""
                  )
         
-        inc = ftp_upload.incoming_location
+        inc = ftp_upload.cfg.incoming_location
         troot= self.ftp_testing_root
         
         # capture the initial state of the incoming files tree (empty)
@@ -343,15 +335,13 @@ class Test(unittest.TestCase):
         
         # capture the state of the processed files tree
         out = open( troot + "/processed.ls", "w")
-        exitStatus = subprocess.call(ls_sed, cwd=ftp_upload.processed_location, 
+        exitStatus = subprocess.call(ls_sed, cwd=ftp_upload.cfg.processed_location, 
                                      stdout=out, shell=True)
         assert exitStatus == 0  # captured processed file tree after processing
         
         # capture the state of the cloud server files tree
         out = open( troot + "/cloud.ls", "w")
-        exitStatus = subprocess.call(ls_sed, 
-                                     cwd=os.path.join(self.ftp_testing_root, 
-                                                      self.ftp_testing_dest),
+        exitStatus = subprocess.call(ls_sed, cwd=self.ftp_destination_path,
                                      stdout=out, shell=True)
         assert exitStatus == 0  # captured server file tree after FTPing files
         
@@ -385,14 +375,13 @@ class Test(unittest.TestCase):
         date = "2010-02-01"
         loc = "downhill"
         filename = "21-22-00-00999.jpg"
-        ftp_dir = ftp_upload.ftp_destination+"/"+date+"/"+loc
-        filepath = os.path.join(ftp_upload.incoming_location, date, loc, filename)
-        donepath = os.path.join(ftp_upload.processed_location, date, loc, filename)
+        ftp_dir = ftp_upload.cfg.ftp_destination+"/"+date+"/"+loc
+        filepath = os.path.join(ftp_upload.cfg.incoming_location, date, loc, filename)
+        donepath = os.path.join(ftp_upload.cfg.processed_location, date, loc, filename)
    
-        ftp_date_dir = os.path.join(self.ftp_testing_root, 
-                                    self.ftp_testing_dest, date)
+        ftp_date_dir = os.path.join(self.ftp_destination_path, date)
         os.mkdir(ftp_date_dir)
-        buildImages(ftp_upload.incoming_location, date, loc, "21-22-00", 999, 1)
+        buildImages(ftp_upload.cfg.incoming_location, date, loc, "21-22-00", 999, 1)
         ftp_upload.storefile(ftp_dir=ftp_dir, filepath=filepath, donepath=donepath, 
                              filename=filename, today=False)
         assert os.path.exists(donepath)
