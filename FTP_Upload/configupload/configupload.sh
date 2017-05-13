@@ -45,7 +45,7 @@ INITD=/etc/init.d
 NOLOGINSHELL=/bin/false
 
 # web directory from which to wget ftp_upload source files
-FUPDIR=https://raw.githubusercontent.com/dougkerr/ftp_upload/configupload/FTP_Upload/src
+FUPDIR=https://raw.githubusercontent.com/dougkerr/ftp_upload-1/configupload/FTP_Upload/src
 FUPDIR2=https://raw.githubusercontent.com/dougkerr/ftp_upload-1/configupload/FTP_Upload/initscript
 
 main() {
@@ -84,9 +84,9 @@ main() {
     #
     echo "***** Download Neighborhood Guard software"
     rm -f $CODE/ftp_upload.py
-    wget -q -P $CODE $FUPDIR/ftp_upload.py
+    wget -P $CODE $FUPDIR/ftp_upload.py
     rm -f $CONFIG/*.conf
-    wget -q -P $CODE $CONFIG/ftp_upload_example.conf
+    wget -P $CONFIG $FUPDIR/ftp_upload_example.conf
     
     # download and install the init script
     #
