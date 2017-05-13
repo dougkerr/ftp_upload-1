@@ -62,10 +62,12 @@ main() {
     # download the required system software
     #
     echo "***** Download and install required system software"
-    apt-get -q install openssh-server
-    apt-get -q install sshpass
-    apt-get -q install tightvncserver
-    apt-get -q install vsftpd
+    apt-get update
+    # XXX apt-get upgrade
+    apt-get -q -y install openssh-server
+    apt-get -q -y install sshpass
+    apt-get -q -y install tightvncserver
+    apt-get -q -y install vsftpd
     apt-get -q -y install samba
 
     # create the ftp_upload directories for code, log and images
@@ -84,9 +86,9 @@ main() {
     #
     echo "***** Download Neighborhood Guard software"
     rm -f $CODE/ftp_upload.py
-    wget -P $CODE $FUPDIR/ftp_upload.py
+    wget --no-check-certificate -P $CODE $FUPDIR/ftp_upload.py
     rm -f $CONFIG/*.conf
-    wget -P $CONFIG $FUPDIR/ftp_upload_example.conf
+    wget --no-check-certificate -P $CONFIG $FUPDIR/ftp_upload_example.conf
     
     # download and install the init script
     #
