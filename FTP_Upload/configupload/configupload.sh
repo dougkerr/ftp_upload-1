@@ -51,7 +51,13 @@ FUPDIR2=https://raw.githubusercontent.com/dougkerr/ftp_upload-1/configupload/FTP
 main() {
     cfg=upload.cfg
     
-	# XXX add verification that we're running as root
+	# verify that we're root
+	if [ `whoami` != root ]
+	then
+		echo "$0: You must run this script as root."
+		echo "Try sudo $0"
+		exit 1
+	fi
 
     # download the required system software
     #
