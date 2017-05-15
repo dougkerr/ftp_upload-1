@@ -11,7 +11,7 @@
 
 DAEMON=python
 DAEMONOPTS="/opt/ftp_upload/ftp_upload.py"
-LOG_PATH="/var/log/ftp_upload"
+LOG_PATH="/var/opt/ftp_upload/log"
 
 NAME=ftp_upload
 PIDFILE=/var/run/$NAME.pid
