@@ -44,9 +44,10 @@ INITD=/etc/init.d
 
 NOLOGINSHELL=/bin/false
 
-# web directory from which to wget ftp_upload source files
-FUPDIR=https://raw.githubusercontent.com/dougkerr/ftp_upload-1/configupload/FTP_Upload/src
-FUPDIR2=https://raw.githubusercontent.com/dougkerr/ftp_upload-1/configupload/FTP_Upload/initscript
+# github directories from which to wget ftp_upload source files
+GHREPO=https://raw.githubusercontent.com/dougkerr/ftp_upload-1/configupload
+FUPDIR=$GHREPO/FTP_Upload/src
+FUPDIR2=$GHREPO/FTP_Upload/initscript
 
 main() {
     cfg=upload.cfg
@@ -59,16 +60,28 @@ main() {
 		exit 1
 	fi
 
-    # download the required system software
+    # set up this machine's NetBIOS name 
     #
-    echo "***** Download and install required system software"
+    echo "***** Update this machine's hostname"
+    hostname="`get_config $cfg um_name`"
+    hostnamectl set-hostname $hostname
+    sed -i "s/127\\.0\\.1\\.1.*$/127.0.1.1\t$hostname/" /etc/hosts
+    
+    echo "***** Update the existing system software"
+	# update and upgrade the system
     apt-get update
     # XXX apt-get upgrade
+    
+    # download the required system software
+    #
+    echo "***** Download and install new required system software"
+    set -x	# echo the following commands
     apt-get -q -y install openssh-server
     apt-get -q -y install sshpass
     apt-get -q -y install tightvncserver
     apt-get -q -y install vsftpd
     apt-get -q -y install samba
+    set +x	# turn off echo
 
     # create the ftp_upload directories for code, log and images
     #
@@ -140,11 +153,6 @@ main() {
     chmod 775 $INC
     echo "$cam_user:`get_config $cfg um_cam_pass`" | chpasswd
 
-    # set up this machine's NetBIOS name 
-    #
-    hostname="`get_config $cfg um_name`"
-    sed -i "s/^.*$/$hostname/" /etc/hostname
-    sed -i "s/127\\.0\\.1\\.1.*$/127.0.1.1\t$hostname/" /etc/hosts
 }
 
 if [ ! $UNIT_TEST_IN_PROGRESS ]
