@@ -72,16 +72,36 @@ main() {
     apt-get update
     # XXX apt-get upgrade
     
-    # download the required system software
+    # install the required system software
     #
     echo "***** Download and install new required system software"
-    set -x	# echo the following commands
-    apt-get -q -y install openssh-server
-    apt-get -q -y install sshpass
-    apt-get -q -y install tightvncserver
-    apt-get -q -y install vsftpd
-    apt-get -q -y install samba
-    set +x	# turn off echo
+#    timer=30
+#    while [ -e /var/lib/dpkg/lock ]
+#    do
+#    	/bin/echo -en "Waiting for /var/lib/dpkg lock: $timer seconds\r"
+#    	timer=`expr $timer - 1`
+#    	if [ "$timer" = 0 ]
+#    	then
+#    		break
+#    	fi
+#    	sleep 1
+#    done
+#	# small race for the lock, here
+    pkgs="openssh-server sshpass tightvncserver vsftpd samba"
+    wtime=5
+    trys=6
+    while ! apt-get -q -y install $pkgs
+    do
+    	echo -n "Install attempt failed.  "
+    	echo "Waiting $wtime seconds and trying again."
+    	trys=`expr $6 - 1`
+    	if [ "$trys" = 0 ]
+    	then
+    		echo "CANNOT INSTALL REQUIRED SYSTEM SOFTWARE"
+    		break
+    	fi
+
+    done
 
     # create the ftp_upload directories for code, log and images
     #
@@ -92,7 +112,6 @@ main() {
     create_dir $LOG
     create_dir $INC
     create_dir $PROC
-    # XXX chown $cam_user:$cam_user $INC
 
 
     # download the current ftp_upload source
@@ -111,10 +130,9 @@ main() {
     wget -q -P $INITD $src
     chmod 755 $tgt
     chown root:root $tgt
-    # update-rc.d ftp_upload defaults 
-    # XXX if starts immediately, need to wait
+    update-rc.d ftp_upload defaults 
 
-    # set up the config values for ftp_upload's localsettings.py
+    # set up the config values for ftp_upload
     #
     echo "***** Configure Neighborhood Guard software"
     conf="$CONFIG/ftp_upload.conf"
@@ -149,10 +167,12 @@ main() {
         deluser --quiet $cam_user 
     fi
     useradd -d $INC -U -s $NOLOGINSHELL $cam_user
-    chgrp $cam_user $INC
+    chown $cam_user:$cam_user $INC    
     chmod 775 $INC
     echo "$cam_user:`get_config $cfg um_cam_pass`" | chpasswd
-
+    
+    echo "***** Start ftp_upload"
+    service ftp_upload start
 }
 
 if [ ! $UNIT_TEST_IN_PROGRESS ]
