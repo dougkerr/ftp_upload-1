@@ -41,6 +41,7 @@ install_wait() {
     do
     	echo -n "Install attempt failed: $1. Will retry for one minute  "
     	echo "Waiting $wtime seconds and trying again."
+    	sleep "$wtime"
     	trys=`expr $trys - 1`
     	if [ "$trys" = 0 ]
     	then
@@ -171,6 +172,17 @@ main() {
     chown $cam_user:$cam_user $INC    
     chmod 775 $INC
     echo "$cam_user:`get_config $cfg um_cam_pass`" | chpasswd
+    
+    # limit FTP users to their login directory and below 
+	# XXX should be done in an idempotent way
+	cf=/etc/proftpd/proftpd.conf
+	echo "# The configuration below was added by the configupload script" >> $cf
+	echo 'DefaultRoot ~' >> $cf
+	
+	# set proftpd up to be run on boot and restart it with the new config
+	update-rc.d proftpd defaults
+	service proftpd restart
+
     
     echo "***** Start ftp_upload"
     service ftp_upload start
