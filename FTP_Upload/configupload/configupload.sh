@@ -32,6 +32,25 @@ create_dir() {
     done
 }
 
+# install the package or packages indicated in the first argument
+install_wait() {
+	local pkgs="$1"
+	local wtime=5
+    local trys=12
+    while ! apt-get -qqy install $pkgs
+    do
+    	echo -n "Install attempt failed: $1. Will retry for one minute  "
+    	echo "Waiting $wtime seconds and trying again."
+    	trys=`expr $trys - 1`
+    	if [ "$trys" = 0 ]
+    	then
+    		echo "CANNOT INSTALL REQUIRED SYSTEM SOFTWARE"
+    		return 1
+    	fi
+    done
+    return 0
+}
+
 # directories required for install of ftp_upload
 #
 CODE=/opt/ftp_upload
@@ -75,33 +94,16 @@ main() {
     # install the required system software
     #
     echo "***** Download and install new required system software"
-#    timer=30
-#    while [ -e /var/lib/dpkg/lock ]
-#    do
-#    	/bin/echo -en "Waiting for /var/lib/dpkg lock: $timer seconds\r"
-#    	timer=`expr $timer - 1`
-#    	if [ "$timer" = 0 ]
-#    	then
-#    		break
-#    	fi
-#    	sleep 1
-#    done
-#	# small race for the lock, here
-    pkgs="openssh-server sshpass tightvncserver vsftpd samba"
-    wtime=5
-    trys=6
-    while ! apt-get -q -y install $pkgs
-    do
-    	echo -n "Install attempt failed.  "
-    	echo "Waiting $wtime seconds and trying again."
-    	trys=`expr $6 - 1`
-    	if [ "$trys" = 0 ]
-    	then
-    		echo "CANNOT INSTALL REQUIRED SYSTEM SOFTWARE"
-    		break
-    	fi
-
-    done
+    
+	# install debconf-utils so we can pre-configure proftpd not to ask the user
+	# whether it should be run under inetd or standalone
+    install_wait debconf-utils
+    echo "proftpd-basic shared/proftpd/inetd_or_standalone select standalone" \
+    	| debconf-set-selections
+    	
+	# install all the required packages
+	pkgs="openssh-server sshpass tightvncserver proftpd samba"
+    install_wait "$pkgs"
 
     # create the ftp_upload directories for code, log and images
     #
@@ -112,7 +114,6 @@ main() {
     create_dir $LOG
     create_dir $INC
     create_dir $PROC
-
 
     # download the current ftp_upload source
     #
@@ -146,7 +147,7 @@ main() {
     set_config_value $conf incoming_location $INC
     set_config_value $conf processed_location $PROC
 
-    # configure for vsftpd.  It seems that the only simple way to
+    # configure for camera FTP.  It seems that the only simple way to
     # deny login to the camera user but allow the camera user to connect
     # via FTP is to put the no-login-shell into /etc/shells then set
     # the camera user's shell to it.  If it's not in /etc/shells,
@@ -158,7 +159,7 @@ main() {
         echo $NOLOGINSHELL >> /etc/shells
     fi
 
-    # create the local ftp user account for the camera(s)
+    # create the local FTP user account for the camera(s)
     # and give it access to the incoming images dir
     #
     cam_user=`get_config $cfg um_cam_user`
