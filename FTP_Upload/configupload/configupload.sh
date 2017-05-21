@@ -62,6 +62,8 @@ INC=$VAR/incoming
 PROC=$VAR/processed
 INITD=/etc/init.d
 
+SCRIPTLOG=./configupload.log
+
 NOLOGINSHELL=/bin/false
 
 # github directories from which to wget ftp_upload source files
@@ -79,6 +81,8 @@ main() {
 		echo "Try sudo $0"
 		exit 1
 	fi
+	
+	echo `date --rfc-3339=seconds` "Start configupload" >> $SCRIPTLOG
 
     # set up this machine's NetBIOS name 
     #
@@ -89,7 +93,7 @@ main() {
     
     echo "***** Update the existing system software"
 	# update and upgrade the system
-    apt-get update
+    apt-get update >> $SCRIPTLOG
     # XXX apt-get upgrade
     
     # install the required system software
@@ -98,13 +102,13 @@ main() {
     
 	# install debconf-utils so we can pre-configure proftpd not to ask the user
 	# whether it should be run under inetd or standalone
-    install_wait debconf-utils
+    install_wait debconf-utils >> $SCRIPTLOG
     echo "proftpd-basic shared/proftpd/inetd_or_standalone select standalone" \
-    	| debconf-set-selections
+    	| debconf-set-selections >> $SCRIPTLOG
     	
 	# install all the required packages
 	pkgs="openssh-server sshpass tightvncserver proftpd samba"
-    install_wait "$pkgs"
+    install_wait "$pkgs" >> $SCRIPTLOG
 
     # create the ftp_upload directories for code, log and images
     #
@@ -120,9 +124,9 @@ main() {
     #
     echo "***** Download Neighborhood Guard software"
     rm -f $CODE/ftp_upload.py
-    wget --no-check-certificate -P $CODE $FUPDIR/ftp_upload.py
+    wget -q --no-check-certificate -P $CODE $FUPDIR/ftp_upload.py 2>&1 >> $SCRIPTLOG
     rm -f $CONFIG/*.conf
-    wget --no-check-certificate -P $CONFIG $FUPDIR/ftp_upload_example.conf
+    wget -q --no-check-certificate -P $CONFIG $FUPDIR/ftp_upload_example.conf 2>&1 >> $SCRIPTLOG
     
     # download and install the init script
     #
