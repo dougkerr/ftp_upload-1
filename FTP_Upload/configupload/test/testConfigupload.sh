@@ -10,7 +10,7 @@ setUp() {
 
 # test the functions for setting values in config files
 #
-test_set_config_values() {
+test_set_config_value() {
     # set up temporary test files
 
 	ttf_orig=_ttf_configvals_orig.conf
@@ -40,9 +40,24 @@ END_OF_FILE
     
     # check the result
     diff $ttf_expected $ttf_orig
-assertEquals "config values set correctly" 0 $?
+	assertEquals "config values set correctly" 0 $?
 }
 
+# test set_config_value when the specified file doesn't exist
+test_set_config_value_no_file() {
+	set_config_value this_file_doesnt_exist server_name realname.org
+    assertNotEquals 0 $?	# return value should be non-zero
+}
+
+# test set_config_value when the specified name doesn't exist in the file
+test_set_config_value_no_name() {
+	ttf_config=_ttf_config.conf
+	touch $ttf_config
+	set_config_value "$ttf_config" newname newvalue
+	assertEquals 0 $?	# set_config_value should return success (zero)
+	value=`get_config "$ttf_config" newname`
+	assertEquals newvalue "$value"
+}
 
 # test the function for returning values from config files
 #
@@ -73,6 +88,41 @@ string with trailing spaces "
     assertEquals "get_config results" "$expected" "$result"
 }
 
+# test get_config when the config file does not exist
+test_get_config_no_file() {
+	stdout=`get_config this_file_doesnt_exist foo`
+	assertNotEquals 0 $?	# get_config returns non-zero
+	assertNull "$stdout"	# stdout is empty string
+}
+
+# test get_config when the name doesn't exist in the config file
+test_get_config_no_name() {
+    ttf_config=_ttf_config.conf
+	cat > $ttf_config << 'END_OF_FILE'
+[default]
+cs_name: gooddomain.org
+cs_user: theuser
+END_OF_FILE
+
+	stdout=`get_config $ttf_config foo`
+	assertEquals 0 $?	# get config returns zero
+	assertNull "$stdout"	# stdout is empty string
+}
+
+# test get_config when the value doesn't exist in the config file
+# but the name does
+test_get_config_name_no_value() {
+    ttf_config=_ttf_config.conf
+	cat > $ttf_config << 'END_OF_FILE'
+[default]
+cs_name: gooddomain.org
+cs_user: 
+END_OF_FILE
+
+	stdout=`get_config $ttf_config cs_user`
+	assertEquals 0 $?	# get config returns zero
+	assertNull "$stdout"	# stdout is empty string
+}
 
 # test the function to create directories owned by root
 # even if they already exist. Note: we're not testing
