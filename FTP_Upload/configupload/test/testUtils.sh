@@ -2,7 +2,7 @@
 #
 UNIT_TEST_IN_PROGRESS=1
 
-. ../configupload.sh
+. ../utils.sh
 
 setUp() {
     rm -rf _ttf_*   # remove the temporary test files
