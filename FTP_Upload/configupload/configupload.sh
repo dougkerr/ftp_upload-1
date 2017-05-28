@@ -66,6 +66,13 @@ install_wait() {
     return 0
 }
 
+# get the original logged in user (because logname and who am i don't work)
+#
+getluser () {
+    ps Tuf --no-headers | sed -e '/ .*/s///' -e q
+}
+
+
 # directories required for install of ftp_upload
 #
 CODE=/opt/ftp_upload
