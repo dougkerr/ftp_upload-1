@@ -1,7 +1,7 @@
 
 # names of the config file and its associated temp file
-confperm=upload.conf
-conftemp=.upload.conf
+conf_file=upload.conf
+conf_temp=.upload.conf
 
 # standard height and width for message boxes
 height=13
@@ -12,14 +12,14 @@ width=60
 # usage: confvalbox title message value_name [value [box_height]]
 #
 confvalbox () {
-    title="$1"
-    msg="$2"
-    name="$3"
-    val="$4"
-    hgt="$5"
+    local title="$1"
+    local msg="$2"
+    local name="$3"
+    local val="$4"
+    local hgt="$5"
     if [ "$val" = "" ]
     then
-        val=`get_config $conf $name`
+        val=`get_config $conf_temp $name`
     fi
     if [ "$hgt" = "" ]
     then
@@ -29,10 +29,10 @@ confvalbox () {
     val=`whiptail --title  "$title" \
         --ok-button Next --cancel-button Previous \
         --inputbox "$msg" $hgt $width "$val" 3>&1 1>&2 2>&3`
-    retval=$?
+    local retval=$?
     case $retval in
         0)
-            set_config_value $conf $name "$val"
+            set_config_value $conf_temp $name "$val"
             return 2
             ;;
         1)
@@ -47,11 +47,12 @@ confvalbox () {
 # If the first argument is non-empty, offer to save the data entered
 #
 cancel_dialog() {
-    title="Cancelled"
+    local title="Cancelled"
+    local m=""
     if [ "$1" ] # if non-empty, offer to save data
     then
-        m="Do you want to save the data you entered (if any) to be used as "
-        m="${m}the default values the next time you run this?"
+    	m="${m}Do you want to save the data you entered (if any) to be used "
+        m="${m}as the default values the next time you run this?"
         m="${m}\n\n                   [ESC will discard]"
         whiptail --title  "$title" --yes-button Save --no-button Discard\
             --yesno "$m" 10 $width
@@ -64,21 +65,21 @@ cancel_dialog() {
 # create the temporary config file
 #
 create_conftemp() {
-    if [ -r "$confperm" ]
+    if [ -r "$conf_file" ]
     then
-        cp "$confperm" "$conftemp"
-        sed -i "/^#>>/d" "$conftemp"    # remove old comment header
-        sed -i '1{x;p;x;}' "$conftemp"  # insert blank line at top of file
+        cp "$conf_file" "$conf_temp"
+        sed -i "/^#>>/d" "$conf_temp"    # remove old comment header
+        sed -i '1{x;p;x;}' "$conf_temp"  # insert blank line at top of file
     else
-        echo > "$conftemp"              # insert blank line at top of file
+        echo > "$conf_temp"              # insert blank line at top of file
     fi
 
     # put the new comment header on the temp file.
     # Note: sed needs at least one line in the file to that 
     # Line 1 can be used as an address
-    cmt="#>> Configuration file created by `getluser`@`hostname`\n"
+    local cmt="#>> Configuration file created by `getluser`@`hostname`\n"
     cmt="${cmt}#>> on `date`\n#>>"
-    sed -i "1s|^|$cmt|" "$conftemp"
+    sed -i "1s|^|$cmt|" "$conf_temp"
 }
     
 # gather the required config info from the user by displaying a series
@@ -86,15 +87,15 @@ create_conftemp() {
 #
 get_info() {
 
-    conf="$conftemp"
     create_conftemp
 
-    esc="\n\n                [Press ESC to cancel]"
+    local esc="\n\n                [Press ESC to cancel]"
 
-    step=1
+    local step=1
     while [ $step -gt 0 ]
     do 
-    m=""
+    local m=""
+    local title
     case $step in
     1)
         title="Introduction"
@@ -188,7 +189,7 @@ get_info() {
             --yesno "$m$esc" $height $width
         case $? in
             0)  # Install button
-                mv "$conftemp" "$confperm"
+                mv "$conf_temp" "$conf_file"
                 break
                 ;;
 
@@ -202,8 +203,8 @@ get_info() {
         ;;
     *)
         # this is a cancellation
-        cancel_step=`expr $step - 254`
-        save_offer=""
+        local cancel_step=`expr $step - 254`
+        local save_offer=""
         if [ $cancel_step -gt 2 ]
         then
             save_offer=1
@@ -211,7 +212,7 @@ get_info() {
 
         if cancel_dialog $save_offer
         then
-            mv "$conftemp" "$confperm"
+            mv "$conf_temp" "$conf_file"
         fi
         return 1
         ;;
