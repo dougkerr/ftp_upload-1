@@ -102,18 +102,16 @@ main() {
 
     # download the current ftp_upload source
     #
-    echo "***** Download Neighborhood Guard software"
-    rm -f $CODE/ftp_upload.py
-    wget -q --no-check-certificate -P $CODE $FUPDIR/ftp_upload.py 2>&1 >> $SCRIPTLOG
-    rm -f $CONFIG/*.conf
-    wget -q --no-check-certificate -P $CONFIG $FUPDIR/ftp_upload_example.conf 2>&1 >> $SCRIPTLOG
+    echo "***** Install Neighborhood Guard software"
+	local our_dir=`dirname $(readlink -e "$0")`
+	cp $our_dir/../src/ftp_upload.py $CODE
+	cp $our_dir/../src/ftp_upload_example.conf $CONFIG
     
     # download and install the init script
     #
-    local src=$FUPDIR2/ftp_upload
     local tgt=$INITD/ftp_upload
     rm -f $tgt
-    wget -q -P $INITD $src
+	cp $our_dir/../initscript/ftp_upload $tgt
     chmod 755 $tgt
     chown root:root $tgt
     update-rc.d ftp_upload defaults 
