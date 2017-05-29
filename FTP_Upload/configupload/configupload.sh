@@ -44,7 +44,7 @@ FUPDIR=$GHREPO/FTP_Upload/src
 FUPDIR2=$GHREPO/FTP_Upload/initscript
 
 main() {
-    cfg=upload.cfg
+	local cfg=$conf_file
     
 	# verify that we're root
 	if [ `whoami` != root -a "$UI_TESTING" != 1 ]
@@ -67,7 +67,7 @@ main() {
     # set up this machine's NetBIOS name
     #
     echo "***** Update this machine's hostname"
-    hostname="`get_config $cfg um_name`"
+    local hostname="`get_config $cfg um_name`"
     hostnamectl set-hostname $hostname
     sed -i "s/127\\.0\\.1\\.1.*$/127.0.1.1\t$hostname/" /etc/hosts
     
@@ -87,7 +87,7 @@ main() {
     	| debconf-set-selections >> $SCRIPTLOG
     	
 	# install all the required packages
-	pkgs="openssh-server sshpass tightvncserver proftpd samba"
+	local pkgs="openssh-server sshpass tightvncserver proftpd samba"
     install_wait "$pkgs" >> $SCRIPTLOG
 
     # create the ftp_upload directories for code, log and images
@@ -110,8 +110,8 @@ main() {
     
     # download and install the init script
     #
-    src=$FUPDIR2/ftp_upload
-    tgt=$INITD/ftp_upload
+    local src=$FUPDIR2/ftp_upload
+    local tgt=$INITD/ftp_upload
     rm -f $tgt
     wget -q -P $INITD $src
     chmod 755 $tgt
@@ -121,7 +121,7 @@ main() {
     # set up the config values for ftp_upload
     #
     echo "***** Configure Neighborhood Guard software"
-    conf="$CONFIG/ftp_upload.conf"
+    local conf="$CONFIG/ftp_upload.conf"
     cp "$CONFIG/ftp_upload_example.conf" "$conf"
     
 	set_config_value $conf ftp_server "`get_config $cfg cs_name`"
@@ -159,7 +159,7 @@ main() {
     
     # limit FTP users to their login directory and below 
 	# XXX should be done in an idempotent way
-	cf=/etc/proftpd/proftpd.conf
+	local cf=/etc/proftpd/proftpd.conf
 	echo "# The configuration below was added by the configupload script" >> $cf
 	echo 'DefaultRoot ~' >> $cf
 	
