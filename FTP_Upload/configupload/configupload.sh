@@ -2,6 +2,7 @@
 
 . ./utils.sh
 . ./confui.sh
+. ./keys.sh
 
 # install the package or packages indicated in the first argument
 install_wait() {
@@ -37,11 +38,6 @@ INITD=/etc/init.d
 SCRIPTLOG=./configupload.log
 
 NOLOGINSHELL=/bin/false
-
-# github directories from which to wget ftp_upload source files
-GHREPO=https://raw.githubusercontent.com/dougkerr/ftp_upload-1/configupload
-FUPDIR=$GHREPO/FTP_Upload/src
-FUPDIR2=$GHREPO/FTP_Upload/initscript
 
 main() {
 	local cfg=$conf_file
@@ -164,6 +160,13 @@ main() {
 	# set proftpd up to be run on boot and restart it with the new config
 	update-rc.d proftpd defaults
 	service proftpd restart
+	
+	echo "***** Set up SSH key pair with cloud server"
+	local luser="`getluser`"
+	local cs_user="`get_config $cfg cs_user`"
+	local cs_name="`get_config $cfg cs_name`"
+	local cs_pass="`get_config $cfg cs_pass`"
+	setupkeypair "$luser" "$cs_user@$cs_name" "$cs_pass"
 
     
     echo "***** Start ftp_upload"
