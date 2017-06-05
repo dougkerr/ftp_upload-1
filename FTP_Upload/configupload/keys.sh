@@ -40,7 +40,7 @@ setupkeypair () {
         -o 'PreferredAuthentications=publickey' \
         -o 'StrictHostKeyChecking=no' $racct exit 2>&1`"
     then
-        echo key pair IS ALREADY set up with $racct
+        echo Key pair IS ALREADY set up with $racct
         return 0
     fi
 
@@ -49,21 +49,21 @@ setupkeypair () {
     # that it will accept), then some other, non-permission-related
     # failure has occurred, e.g., we can't reach the host
     #
-    if ! echo "$sshmsg" | grep -i "permission denied"
+    if ! echo "$sshmsg" | grep -i  "permission denied" > /dev/null
     then
-        echo other error with ssh:
+        echo Unable to connect to $racct
         echo "$sshmsg"
         return 1
     fi
 
-    echo no key pair set up with $racct, setting one up now...
+    echo No key pair set up with $racct, setting one up now...
 
     # if there's an existing private key, then check for a public key.
     # If we don't have a public key, or the one we have doesn't match
     # the private key, save the correct public key to a new file
     #
     local pubkeyfile=$HOME/.ssh/id_rsa.pub
-    if genpubkey="`echo | $SUDOLU ssh-keygen -y -f $privkeyfile`"
+    if genpubkey="`echo | $SUDOLU ssh-keygen -q -y -f $privkeyfile 2>/dev/null`"
     then
         local pubkey="`sed 's/\([^ ][^ ]*  *[^ ][^ ]*\).*$/\1/' $pubkeyfile`"
         if [ $? != 0 -o "$pubkey" != "$genpubkey" ]
@@ -77,14 +77,15 @@ setupkeypair () {
     #
     else
         echo "Generating new key pair."
-        echo | $SUDOLU ssh-keygen -q -t rsa
+        echo | $SUDOLU ssh-keygen -q -t rsa -f $privkeyfile 2> /dev/null
     fi
 
     echo Have key pair priv=$privkeyfile pub=$pubkeyfile
 
     # copy pub key to cloud server
     #
-    $SUDOLU sshpass -p"$cs_pass" ssh-copy-id -f -i "$pubkeyfile" "$racct" 
+    $SUDOLU sshpass -p"$cs_pass" ssh-copy-id -f -i "$pubkeyfile" "$racct" \
+        > /dev/null 2>&1
 
     # now see if we can log in
     #
