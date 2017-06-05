@@ -67,7 +67,7 @@ main() {
     hostnamectl set-hostname $hostname
     sed -i "s/127\\.0\\.1\\.1.*$/127.0.1.1\t$hostname/" /etc/hosts
     
-    echo "***** Update the existing system software"
+    echo "***** Update the available system software listing"
 	# update and upgrade the system
     apt-get update >> $SCRIPTLOG
     # XXX apt-get upgrade

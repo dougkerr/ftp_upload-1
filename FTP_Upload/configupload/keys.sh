@@ -19,7 +19,7 @@ setupkeypair () {
     # is true, move the key aside
     #
     local genpubkey
-    local privkeyfile=~/.ssh/id_rsa 
+    local privkeyfile=$HOME/.ssh/id_rsa 
     if [ -e $privkeyfile ]
     then
         genpubkey=""
@@ -40,7 +40,7 @@ setupkeypair () {
         -o 'PreferredAuthentications=publickey' \
         -o 'StrictHostKeyChecking=no' $racct exit 2>&1`"
     then
-        echo key pair IS already set up with $racct
+        echo key pair IS ALREADY set up with $racct
         return 0
     fi
 
@@ -62,13 +62,13 @@ setupkeypair () {
     # If we don't have a public key, or the one we have doesn't match
     # the private key, save the correct public key to a new file
     #
+    local pubkeyfile=$HOME/.ssh/id_rsa.pub
     if genpubkey="`echo | $SUDOLU ssh-keygen -y -f $privkeyfile`"
     then
-        local pubkeyfile=~/.ssh/id_rsa.pub
         local pubkey="`sed 's/\([^ ][^ ]*  *[^ ][^ ]*\).*$/\1/' $pubkeyfile`"
         if [ $? != 0 -o "$pubkey" != "$genpubkey" ]
         then
-            pubkeyfile=~/.ssh/id_rsa.uploadconfig.pub
+            pubkeyfile=$HOME/.ssh/id_rsa.uploadconfig.pub
             echo "$genpubkey" "$luser@$um_name" | \
                 $SUDOLU tee $pubkeyfile > /dev/null
         fi
@@ -77,7 +77,7 @@ setupkeypair () {
     #
     else
         echo "Generating new key pair."
-        echo | $SUDOLU ssh-keygen -t rsa
+        echo | $SUDOLU ssh-keygen -q -t rsa
     fi
 
     echo Have key pair priv=$privkeyfile pub=$pubkeyfile
