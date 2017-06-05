@@ -27,17 +27,19 @@ install_wait() {
 
 # directories required for install of ftp_upload
 #
-CODE=/opt/ftp_upload
-CONFIG=/etc/opt/ftp_upload
-VAR=/var/opt/ftp_upload
-LOG=$VAR/log
-INC=$VAR/incoming
-PROC=$VAR/processed
-INITD=/etc/init.d
+code_dir=/opt/ftp_upload
+config_dir=/etc/opt/ftp_upload
+var_dir=/var/opt/ftp_upload
+log_dir=$var_dir/log
+inc_dir=$var_dir/incoming
+proc_dir=$var_dir/processed
+initd_dir=/etc/init.d
 
-SCRIPTLOG=./configupload.log
+# log file for this script
+scriptlog=./configupload.log
 
-NOLOGINSHELL=/bin/false
+# shell to use as a no-login shell for the camera's FTP account
+nologinshell=/bin/false
 
 main() {
 	local cfg=$conf_file
@@ -58,7 +60,7 @@ main() {
 	    exit 1
 	fi
 	
-	echo `date --rfc-3339=seconds` "Start configupload" >> $SCRIPTLOG
+	echo `date --rfc-3339=seconds` "Start configupload" >> $scriptlog
 
     # set up this machine's NetBIOS name
     #
@@ -69,7 +71,7 @@ main() {
     
     echo "***** Update the available system software listing"
 	# update and upgrade the system
-    apt-get update >> $SCRIPTLOG
+    apt-get update >> $scriptlog
     # XXX apt-get upgrade
     
     # install the required system software
@@ -78,34 +80,34 @@ main() {
     
 	# install debconf-utils so we can pre-configure proftpd not to ask the user
 	# whether it should be run under inetd or standalone
-    install_wait debconf-utils >> $SCRIPTLOG
+    install_wait debconf-utils >> $scriptlog
     echo "proftpd-basic shared/proftpd/inetd_or_standalone select standalone" \
-    	| debconf-set-selections >> $SCRIPTLOG
+    	| debconf-set-selections >> $scriptlog
     	
 	# install all the required packages
 	local pkgs="openssh-server sshpass tightvncserver proftpd samba"
-    install_wait "$pkgs" >> $SCRIPTLOG
+    install_wait "$pkgs" >> $scriptlog
 
     # create the ftp_upload directories for code, log and images
     #
     echo "***** Create required directories"
-    create_dir $CODE
-    create_dir $CONFIG
-    create_dir $VAR
-    create_dir $LOG
-    create_dir $INC
-    create_dir $PROC
+    create_dir $code_dir
+    create_dir $config_dir
+    create_dir $var_dir
+    create_dir $log_dir
+    create_dir $inc_dir
+    create_dir $proc_dir
 
     # download the current ftp_upload source
     #
     echo "***** Install Neighborhood Guard software"
 	local our_dir=`dirname $(readlink -e "$0")`
-	cp $our_dir/../src/ftp_upload.py $CODE
-	cp $our_dir/../src/ftp_upload_example.conf $CONFIG
+	cp $our_dir/../src/ftp_upload.py $code_dir
+	cp $our_dir/../src/ftp_upload_example.conf $config_dir
     
     # download and install the init script
     #
-    local tgt=$INITD/ftp_upload
+    local tgt=$initd_dir/ftp_upload
     rm -f $tgt
 	cp $our_dir/../initscript/ftp_upload $tgt
     chmod 755 $tgt
@@ -115,16 +117,16 @@ main() {
     # set up the config values for ftp_upload
     #
     echo "***** Configure Neighborhood Guard software"
-    local conf="$CONFIG/ftp_upload.conf"
-    cp "$CONFIG/ftp_upload_example.conf" "$conf"
+    local conf="$config_dir/ftp_upload.conf"
+    cp "$config_dir/ftp_upload_example.conf" "$conf"
     
 	set_config_value $conf ftp_server "`get_config $cfg cs_name`"
     set_config_value $conf ftp_username "`get_config $cfg cs_user`"
     set_config_value $conf ftp_password "`get_config $cfg cs_pass`"
     set_config_value $conf ftp_destination "/`get_config $cfg cs_ftp_dir`"
 	set_config_value $conf retain_days "`get_config $cfg um_retain_days`"
-    set_config_value $conf incoming_location $INC
-    set_config_value $conf processed_location $PROC
+    set_config_value $conf incoming_location $inc_dir
+    set_config_value $conf processed_location $proc_dir
 
     # configure for camera FTP.  It seems that the only simple way to
     # deny login to the camera user but allow the camera user to connect
@@ -133,9 +135,9 @@ main() {
     # vsftpd won't allow the user to connect via FTP
     #
     echo "***** Configure camera FTP access to this machine"
-    if ! grep "^$NOLOGINSHELL\$" /etc/shells > /dev/null
+    if ! grep "^$nologinshell\$" /etc/shells > /dev/null
     then
-        echo $NOLOGINSHELL >> /etc/shells
+        echo $nologinshell >> /etc/shells
     fi
 
     # create the local FTP user account for the camera(s)
@@ -146,9 +148,9 @@ main() {
     then
         deluser --quiet $cam_user 
     fi
-    useradd -d $INC -U -s $NOLOGINSHELL $cam_user
-    chown $cam_user:$cam_user $INC    
-    chmod 775 $INC
+    useradd -d $inc_dir -U -s $nologinshell $cam_user
+    chown $cam_user:$cam_user $inc_dir    
+    chmod 775 $inc_dir
     echo "$cam_user:`get_config $cfg um_cam_pass`" | chpasswd
     
     # limit FTP users to their login directory and below 
