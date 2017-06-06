@@ -168,7 +168,7 @@ main() {
 	local cs_user="`get_config $cfg cs_user`"
 	local cs_name="`get_config $cfg cs_name`"
 	local cs_pass="`get_config $cfg cs_pass`"
-	setupkeypair "$luser" "$cs_user@$cs_name" "$cs_pass"
+	setupkeypair "$luser" "$cs_user@$cs_name" "$cs_pass" "$scriptlog"
 
     
     echo "***** Start ftp_upload"

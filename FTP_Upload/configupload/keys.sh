@@ -1,13 +1,20 @@
 
 # see if an ssh key pair is already set up between the current user on 
 # this machine and the cloud server. If not, set one up now.
-# usage: setupkeypair local_user remotuser@remoteserver remote_passwd
+# usage: setupkeypair local_user remotuser@remoteserver remote_passwd log_file
 #
 setupkeypair () {
-    local luser=$1
-    local racct=$2
-    local rpass=$3
-
+    local luser="$1"
+    local racct="$2"
+    local rpass="$3"
+    local logfile="$4"
+    
+    # try to ensure valid logfile
+    if [ "$logfile" = "" ]
+    then
+        logfile=/dev/null
+    fi
+    
     # build the sudo prefix to run a command as the local user with a
     # controlling tty, and the su prefix to run as the local user
     # but without a controlling tty
@@ -23,9 +30,10 @@ setupkeypair () {
     if [ -e $privkeyfile ]
     then
         genpubkey=""
-        if ! genpubkey="`$SUDOLU ssh-keygen -y -f $privkeyfile < /dev/null`"
+        if ! genpubkey="`$SUDOLU ssh-keygen -y -f $privkeyfile < /dev/null \
+            >> "$logfile" 2>&1`"
         then
-            echo Moving bad private key aside.
+            echo Moving bad private key aside >> "$logfile"
             mv $privkeyfile $privkeyfile.orig
         fi
     fi
@@ -40,7 +48,7 @@ setupkeypair () {
         -o 'PreferredAuthentications=publickey' \
         -o 'StrictHostKeyChecking=no' $racct exit 2>&1`"
     then
-        echo Key pair IS ALREADY set up with $racct
+        echo Key pair IS ALREADY set up with $racct >> "$logfile"
         return 0
     fi
 
@@ -51,19 +59,20 @@ setupkeypair () {
     #
     if ! echo "$sshmsg" | grep -i  "permission denied" > /dev/null
     then
-        echo Unable to connect to $racct
-        echo "$sshmsg"
+        echo Unable to connect to $racct | tee -a "$logfile"
+        echo "$sshmsg" | tee -a "$logfile"
         return 1
     fi
 
-    echo No key pair set up with $racct, setting one up now...
+    echo No key pair set up with $racct, setting one up now... >> "$logfile"
 
     # if there's an existing private key, then check for a public key.
     # If we don't have a public key, or the one we have doesn't match
     # the private key, save the correct public key to a new file
     #
     local pubkeyfile=$HOME/.ssh/id_rsa.pub
-    if genpubkey="`echo | $SUDOLU ssh-keygen -q -y -f $privkeyfile 2>/dev/null`"
+    if genpubkey="`echo | $SUDOLU ssh-keygen -q -y -f $privkeyfile \
+        2>> "$logfile"`"
     then
         local pubkey="`sed 's/\([^ ][^ ]*  *[^ ][^ ]*\).*$/\1/' $pubkeyfile`"
         if [ $? != 0 -o "$pubkey" != "$genpubkey" ]
@@ -76,16 +85,16 @@ setupkeypair () {
     # otherwise (we don't have a good private key), generate the key pair
     #
     else
-        echo "Generating new key pair."
-        echo | $SUDOLU ssh-keygen -q -t rsa -f $privkeyfile 2> /dev/null
+        echo "Generating new key pair." >> "$logfile"
+        echo | $SUDOLU ssh-keygen -q -t rsa -f $privkeyfile >> "$logfile" 2>&1
     fi
 
-    echo Have key pair priv=$privkeyfile pub=$pubkeyfile
+    echo Have key pair priv=$privkeyfile pub=$pubkeyfile >> "$logfile"
 
     # copy pub key to cloud server
     #
     $SUDOLU sshpass -p"$cs_pass" ssh-copy-id -f -i "$pubkeyfile" "$racct" \
-        > /dev/null 2>&1
+        >> "$logfile" 2>&1
 
     # now see if we can log in
     #
@@ -93,11 +102,12 @@ setupkeypair () {
         -o 'PreferredAuthentications=publickey' \
         -o 'StrictHostKeyChecking=no' $racct exit 2>&1`"
     then
-        echo Cannot ssh to server even though we just set up a key pair.
+        echo Cannot ssh to server even though we just set up a key pair. \
+            >> "$logfile"
         return 1
     fi
 
-    echo Successfully set up key pair!
+    echo Successfully set up key pair! >> "$logfile"
     return 0
 }
 
