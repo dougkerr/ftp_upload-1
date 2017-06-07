@@ -64,19 +64,20 @@ main() {
 
     # set up this machine's NetBIOS name
     #
-    echo "***** Update this machine's hostname"
+    echo "***** Update this machine's hostname" | tee -a $scriptlog
     local hostname="`get_config $cfg um_name`"
     hostnamectl set-hostname $hostname
     sed -i "s/127\\.0\\.1\\.1.*$/127.0.1.1\t$hostname/" /etc/hosts
     
-    echo "***** Update the available system software listing"
+    echo "***** Update the available system software listing"| tee -a $scriptlog
 	# update and upgrade the system
     apt-get update >> $scriptlog
     # XXX apt-get upgrade
     
     # install the required system software
     #
-    echo "***** Download and install new required system software"
+    echo "***** Download and install new required system software" \
+        | tee -a $scriptlog
     
 	# install debconf-utils so we can pre-configure proftpd not to ask the user
 	# whether it should be run under inetd or standalone
@@ -90,7 +91,7 @@ main() {
 
     # create the ftp_upload directories for code, log and images
     #
-    echo "***** Create required directories"
+    echo "***** Create required directories" | tee -a $scriptlog
     create_dir $code_dir
     create_dir $config_dir
     create_dir $var_dir
@@ -100,7 +101,7 @@ main() {
 
     # download the current ftp_upload source
     #
-    echo "***** Install Neighborhood Guard software"
+    echo "***** Install Neighborhood Guard software" | tee -a $scriptlog
 	local our_dir=`dirname $(readlink -e "$0")`
 	cp $our_dir/../src/ftp_upload.py $code_dir
 	cp $our_dir/../src/ftp_upload_example.conf $config_dir
@@ -116,7 +117,7 @@ main() {
 
     # set up the config values for ftp_upload
     #
-    echo "***** Configure Neighborhood Guard software"
+    echo "***** Configure Neighborhood Guard software" | tee -a $scriptlog
     local conf="$config_dir/ftp_upload.conf"
     cp "$config_dir/ftp_upload_example.conf" "$conf"
     
@@ -134,7 +135,7 @@ main() {
     # the camera user's shell to it.  If it's not in /etc/shells,
     # vsftpd won't allow the user to connect via FTP
     #
-    echo "***** Configure camera FTP access to this machine"
+    echo "***** Configure camera FTP access to this machine" | tee -a $scriptlog
     if ! grep "^$nologinshell\$" /etc/shells > /dev/null
     then
         echo $nologinshell >> /etc/shells
@@ -163,7 +164,7 @@ main() {
 	update-rc.d proftpd defaults
 	service proftpd restart
 	
-	echo "***** Set up SSH key pair with cloud server"
+	echo "***** Set up SSH key pair with cloud server" | tee -a $scriptlog
 	local luser="`getluser`"
 	local cs_user="`get_config $cfg cs_user`"
 	local cs_name="`get_config $cfg cs_name`"
@@ -171,8 +172,10 @@ main() {
 	setupkeypair "$luser" "$cs_user@$cs_name" "$cs_pass" "$scriptlog"
 
     
-    echo "***** Start ftp_upload"
+    echo "***** Start ftp_upload" | tee -a $scriptlog
     service ftp_upload start
+    
+    echo "***** Done" | tee -a $scriptlog
 }
 
 if [ ! $UNIT_TEST_IN_PROGRESS ]
