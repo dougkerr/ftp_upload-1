@@ -138,8 +138,13 @@ configure() {
     # limit FTP users to their login directory and below 
 	# XXX should be done in an idempotent way
 	local cf=/etc/proftpd/proftpd.conf
-	echo "# The configuration below was added by the configupload script" >> $cf
-	echo 'DefaultRoot ~' >> $cf
+	if ! grep -E '^DefaultRoot\s+~' "$cf" > /dev/null
+	then
+	    echo \
+	       "# The configuration below was added by the configupload script" \
+	        >> $cf
+        echo 'DefaultRoot ~' >> $cf
+    fi
 	
 	# set proftpd up to be run on boot and restart it with the new config
 	update-rc.d proftpd defaults
