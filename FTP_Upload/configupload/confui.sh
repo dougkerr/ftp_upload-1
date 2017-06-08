@@ -124,7 +124,14 @@ get_info() {
         m="${m}The name must be 15 characters or less, and consist only "
         m="${m}of letters, numbers and the dash (\"-\") symbol. "
         m="${m}This machine is currently named '$(hostname)'."
-        confvalbox "$title" "$m$esc" um_name `hostname` 15
+        # if there's no host name in the config file,
+        # supply the current host name as the default
+        local defname=`get_config $conf_temp um_name`
+        if [ "$defname" = "" ]
+        then
+            defname=`hostname`
+        fi
+        confvalbox "$title" "$m$esc" um_name "$defname" 15
         step=`expr $step + $?`
         ;;
     3)
