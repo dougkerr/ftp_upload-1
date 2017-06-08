@@ -6,20 +6,20 @@
 
 # install the package or packages indicated in the first argument
 install_wait() {
-	local pkgs="$1"
-	local wtime=5
+    local pkgs="$1"
+    local wtime=5
     local trys=12
     while ! apt-get -qqy install $pkgs
     do
-    	echo -n "Install attempt failed: $1. Will retry for one minute  "
-    	echo "Waiting $wtime seconds and trying again."
-    	sleep "$wtime"
-    	trys=`expr $trys - 1`
-    	if [ "$trys" = 0 ]
-    	then
-    		echo "CANNOT INSTALL REQUIRED SYSTEM SOFTWARE"
-    		return 1
-    	fi
+        echo -n "Install attempt failed: $1. Will retry for one minute  "
+        echo "Waiting $wtime seconds and trying again."
+        sleep "$wtime"
+        trys=`expr $trys - 1`
+        if [ "$trys" = 0 ]
+        then
+            echo "CANNOT INSTALL REQUIRED SYSTEM SOFTWARE"
+            return 1
+        fi
     done
     return 0
 }
@@ -42,7 +42,7 @@ scriptlog=./configupload.log
 nologinshell=/bin/false
 
 configure() {
-	local cfg=$conf_file
+    local cfg=$conf_file
     
     # set up this machine's NetBIOS name
     #
@@ -52,7 +52,7 @@ configure() {
     sed -i "s/127\\.0\\.1\\.1.*$/127.0.1.1\t$hostname/" /etc/hosts
     
     echo "***** Update the available system software listing" | tee /dev/tty
-	# update and upgrade the system
+    # update and upgrade the system
     apt-get update  # info output to log
     # XXX apt-get upgrade
     
@@ -60,14 +60,14 @@ configure() {
     #
     echo "***** Download and install new required system software" |tee /dev/tty
     
-	# install debconf-utils so we can pre-configure proftpd not to ask the user
-	# whether it should be run under inetd or standalone
+    # install debconf-utils so we can pre-configure proftpd not to ask the user
+    # whether it should be run under inetd or standalone
     install_wait debconf-utils  # info output to log
     echo "proftpd-basic shared/proftpd/inetd_or_standalone select standalone" \
-    	| debconf-set-selections   # info output to log
-    	
-	# install all the required packages
-	local pkgs="openssh-server sshpass tightvncserver proftpd samba"
+        | debconf-set-selections   # info output to log
+        
+    # install all the required packages
+    local pkgs="openssh-server sshpass tightvncserver proftpd samba"
     install_wait "$pkgs"    # info output to log
 
     # create the ftp_upload directories for code, log and images
@@ -83,15 +83,15 @@ configure() {
     # download the current ftp_upload source
     #
     echo "***** Install Neighborhood Guard software" | tee /dev/tty
-	local our_dir=`dirname $(readlink -e "$0")`
-	cp $our_dir/../src/ftp_upload.py $code_dir
-	cp $our_dir/../src/ftp_upload_example.conf $config_dir
+    local our_dir=`dirname $(readlink -e "$0")`
+    cp $our_dir/../src/ftp_upload.py $code_dir
+    cp $our_dir/../src/ftp_upload_example.conf $config_dir
     
     # download and install the init script
     #
     local tgt=$initd_dir/ftp_upload
     rm -f $tgt
-	cp $our_dir/../initscript/ftp_upload $tgt
+    cp $our_dir/../initscript/ftp_upload $tgt
     chmod 755 $tgt
     chown root:root $tgt
     update-rc.d ftp_upload defaults 
@@ -102,11 +102,11 @@ configure() {
     local conf="$config_dir/ftp_upload.conf"
     cp "$config_dir/ftp_upload_example.conf" "$conf"
     
-	set_config_value $conf ftp_server "`get_config $cfg cs_name`"
+    set_config_value $conf ftp_server "`get_config $cfg cs_name`"
     set_config_value $conf ftp_username "`get_config $cfg cs_user`"
     set_config_value $conf ftp_password "`get_config $cfg cs_pass`"
     set_config_value $conf ftp_destination "/`get_config $cfg cs_ftp_dir`"
-	set_config_value $conf retain_days "`get_config $cfg um_retain_days`"
+    set_config_value $conf retain_days "`get_config $cfg um_retain_days`"
     set_config_value $conf incoming_location $inc_dir
     set_config_value $conf processed_location $proc_dir
 
@@ -136,26 +136,26 @@ configure() {
     echo "$cam_user:`get_config $cfg um_cam_pass`" | chpasswd
     
     # limit FTP users to their login directory and below 
-	# XXX should be done in an idempotent way
-	local cf=/etc/proftpd/proftpd.conf
-	if ! grep -E '^DefaultRoot\s+~' "$cf" > /dev/null
-	then
-	    echo \
-	       "# The configuration below was added by the configupload script" \
-	        >> $cf
+    # XXX should be done in an idempotent way
+    local cf=/etc/proftpd/proftpd.conf
+    if ! grep -E '^DefaultRoot\s+~' "$cf" > /dev/null
+    then
+        echo \
+           "# The configuration below was added by the configupload script" \
+            >> $cf
         echo 'DefaultRoot ~' >> $cf
     fi
-	
-	# set proftpd up to be run on boot and restart it with the new config
-	update-rc.d proftpd defaults
-	service proftpd restart
-	
-	echo "***** Set up SSH key pair with cloud server" | tee /dev/tty
-	local luser="`getluser`"
-	local cs_user="`get_config $cfg cs_user`"
-	local cs_name="`get_config $cfg cs_name`"
-	local cs_pass="`get_config $cfg cs_pass`"
-	setupkeypair "$luser" "$cs_user@$cs_name" "$cs_pass"
+    
+    # set proftpd up to be run on boot and restart it with the new config
+    update-rc.d proftpd defaults
+    service proftpd restart
+    
+    echo "***** Set up SSH key pair with cloud server" | tee /dev/tty
+    local luser="`getluser`"
+    local cs_user="`get_config $cfg cs_user`"
+    local cs_name="`get_config $cfg cs_name`"
+    local cs_pass="`get_config $cfg cs_pass`"
+    setupkeypair "$luser" "$cs_user@$cs_name" "$cs_pass"
 
     
     echo "***** Start ftp_upload" | tee /dev/tty

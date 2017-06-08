@@ -51,7 +51,7 @@ cancel_dialog() {
     local m=""
     if [ "$1" ] # if non-empty, offer to save data
     then
-    	m="${m}Do you want to save the data you entered (if any) to be used "
+        m="${m}Do you want to save the data you entered (if any) to be used "
         m="${m}as the default values the next time you run this?"
         m="${m}\n\n                   [ESC will discard]"
         whiptail --title  "$title" --yes-button Save --no-button Discard\

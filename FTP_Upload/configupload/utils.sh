@@ -5,16 +5,16 @@
 # usage: set_config_value file name value
 #
 set_config_value() {
-	if [ ! -w "$1" ]	# file doesn't exist or is not writeable
-	then
-		return 1
-	fi
-	if grep "^$2\s*[:=]" $1	> /dev/null # if file contains name, edit the value
-	then
-    	sed -i "s|^\($2\s*[:=]\s*\).*$|\1$3|" "$1" 2> /dev/null
-	else					# if it doesn't, append the name/value pair
-		echo "$2 = $3" >> "$1"
-	fi
+    if [ ! -w "$1" ]    # file doesn't exist or is not writeable
+    then
+        return 1
+    fi
+    if grep "^$2\s*[:=]" $1 > /dev/null # if file contains name, edit the value
+    then
+        sed -i "s|^\($2\s*[:=]\s*\).*$|\1$3|" "$1" 2> /dev/null
+    else                    # if it doesn't, append the name/value pair
+        echo "$2 = $3" >> "$1"
+    fi
 }
 
 # Retrieve the configuration value for the given name from the
