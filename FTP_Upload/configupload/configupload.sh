@@ -36,29 +36,50 @@ proc_dir=$var_dir/processed
 initd_dir=/etc/init.d
 
 # log file for this script
-scriptlog=./configupload.log
+scriptlog=configupload.log
 
 # shell to use as a no-login shell for the camera's FTP account
 nologinshell=/bin/false
 
+# global to hold the name of the section that produced an unexpected error
+#
+task=""
+
+# on unexpected exit, print an error message with the approximate location
+# of the error
+#
+errorexit() {
+    echo "An unexpected error occurred while $task." | tee -a "$scriptlog" >&2
+    echo "Please see the log file: $scriptlog." | tee -a "$scriptlog" >&2
+    exit 1
+}
+
 configure() {
     local cfg=$conf_file
     
+    # Set up to catch unexpected errors and notify user
+    #
+    trap errorexit EXIT
+    set -e
+    
     # set up this machine's NetBIOS name
     #
-    echo "***** Update this machine's hostname" | tee /dev/tty
+    task="updating this machine's hostname"
+    echo "***** $task" | tee /dev/tty
     local hostname="`get_config $cfg um_name`"
     hostnamectl set-hostname $hostname
     sed -i "s/127\\.0\\.1\\.1.*$/127.0.1.1\t$hostname/" /etc/hosts
     
-    echo "***** Update the available system software listing" | tee /dev/tty
+    task="updating the available system software listing"
+    echo "***** $task" | tee /dev/tty
     # update and upgrade the system
     apt-get update  # info output to log
     # XXX apt-get upgrade
     
     # install the required system software
     #
-    echo "***** Download and install new required system software" |tee /dev/tty
+    task="downloading and installing new required system software"
+    echo "***** $task" | tee /dev/tty
     
     # install debconf-utils so we can pre-configure proftpd not to ask the user
     # whether it should be run under inetd or standalone
@@ -72,7 +93,8 @@ configure() {
 
     # create the ftp_upload directories for code, log and images
     #
-    echo "***** Create required directories" | tee /dev/tty
+    task="creating required directories"
+    echo "***** $task" | tee /dev/tty
     create_dir $code_dir
     create_dir $config_dir
     create_dir $var_dir
@@ -82,7 +104,8 @@ configure() {
 
     # download the current ftp_upload source
     #
-    echo "***** Install Neighborhood Guard software" | tee /dev/tty
+    task="installing Neighborhood Guard software"
+    echo "***** $task" | tee /dev/tty
     local our_dir=`dirname $(readlink -e "$0")`
     cp $our_dir/../src/ftp_upload.py $code_dir
     cp $our_dir/../src/ftp_upload_example.conf $config_dir
@@ -98,8 +121,9 @@ configure() {
 
     # set up the config values for ftp_upload
     #
-    echo "***** Configure Neighborhood Guard software" | tee /dev/tty
-    local conf="$config_dir/ftp_upload.conf"
+    task="configuring Neighborhood Guard software"
+    echo "***** $task" | tee /dev/tty
+        local conf="$config_dir/ftp_upload.conf"
     cp "$config_dir/ftp_upload_example.conf" "$conf"
     
     set_config_value $conf ftp_server "`get_config $cfg cs_name`"
@@ -116,8 +140,9 @@ configure() {
     # the camera user's shell to it.  If it's not in /etc/shells,
     # vsftpd won't allow the user to connect via FTP
     #
-    echo "***** Configure camera FTP access to this machine" | tee /dev/tty
-    if ! grep "^$nologinshell\$" /etc/shells > /dev/null
+    task="configuring camera FTP access to this machine"
+    echo "***** $task" | tee /dev/tty
+        if ! grep "^$nologinshell\$" /etc/shells > /dev/null
     then
         echo $nologinshell >> /etc/shells
     fi
@@ -150,18 +175,24 @@ configure() {
     update-rc.d proftpd defaults
     service proftpd restart
     
-    echo "***** Set up SSH key pair with cloud server" | tee /dev/tty
-    local luser="`getluser`"
+    task="setting up SSH key pair with cloud server"
+    echo "***** $task" | tee /dev/tty
+        local luser="`getluser`"
     local cs_user="`get_config $cfg cs_user`"
     local cs_name="`get_config $cfg cs_name`"
     local cs_pass="`get_config $cfg cs_pass`"
     setupkeypair "$luser" "$cs_user@$cs_name" "$cs_pass"
 
     
-    echo "***** Start ftp_upload" | tee /dev/tty
+    task="starting ftp_upload"
+    echo "***** $task" | tee /dev/tty
     service ftp_upload start
     
-    echo "***** Done" | tee /dev/tty
+    # Turn off error trap
+    set +e
+    trap - EXIT
+    
+    echo "***** done" | tee /dev/tty
 }
 
 
