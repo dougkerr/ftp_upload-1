@@ -7,6 +7,10 @@ conf_temp=.upload.conf
 height=13
 width=60
 
+# constants for confvalbox() return values
+Prev=0
+Next=2
+
 # put up a dialog box to request a configuration value from the user.
 #
 # usage: confvalbox title message value_name [value [box_height]]
@@ -26,19 +30,20 @@ confvalbox () {
         hgt="$height"
     fi
 
-    val=`whiptail --title  "$title" \
+    val="`whiptail --title  "$title" \
         --ok-button Next --cancel-button Previous \
-        --inputbox "$msg" $hgt $width "$val" 3>&1 1>&2 2>&3`
+        --inputbox -- "$msg" $hgt $width "$val" 3>&1 1>&2 2>&3`"
     local retval=$?
+    echo "$val"
     case $retval in
-        0)
+        0)  # Next button
             set_config_value $conf_temp $name "$val"
             return 2
             ;;
-        1)
+        1)  # Previous button
             return 0
             ;;
-        *)
+        *)  # ESC key
             return $retval
     esac
 }
@@ -90,6 +95,9 @@ get_info() {
     create_conftemp
 
     local esc="\n\n                [Press ESC to cancel]"
+    
+    local xstat # exit status of confvalbox
+    local rval  # return value from confvalbox (stdout)
 
     local step=1
     while [ $step -gt 0 ]
@@ -117,12 +125,13 @@ get_info() {
         fi
         ;;
     2)
-        title="Name This Machine"
-        m="${m}The name of this machine will be set to what you enter here. "
-        m="${m}The camera "
-        m="${m}will use this name to find this machine on the local network. "
-        m="${m}The name must be 15 characters or less, and consist only "
-        m="${m}of letters, numbers and the dash (\"-\") symbol. "
+        title="Name This Computer"
+        m="${m}The name of this computer will be set to what you enter here. "
+        m="${m}The camera can use "
+        m="${m}the name to find this computer on the local network. "
+        m="${m}The name must be 1 to 15 characters, and consist only "
+        m="${m}of letters, numbers and the hyphen (\"-\") symbol, "
+        m="${m}and must not start with a hyphen. "
         m="${m}This machine is currently named '$(hostname)'."
         # if there's no host name in the config file,
         # supply the current host name as the default
@@ -131,51 +140,76 @@ get_info() {
         then
             defname=`hostname`
         fi
-        confvalbox "$title" "$m$esc" um_name "$defname" 15
-        step=`expr $step + $?`
+        rval="`confvalbox "$title" "$m$esc" um_name "$defname" 17`"
+        xstat=$?
+        if [ $xstat = $Next ] # if Next button pressed, validate input
+        then
+            if ! echo "$rval" | grep -E '^[A-Za-z0-9][-A-Za-z0-9]{1,14}$'
+            then
+                title="Error in Computer Name"
+                m=""
+                m="${m}The name must be 1 to 15 characters, and consist only "
+                m="${m}of letters, numbers and the hyphen (\"-\") symbol, "
+                m="${m}and must not start with a hyphen. "
+                whiptail --title "$title" --msgbox "$m" 8 $width
+                continue    # repeat this step
+            fi
+        fi
+        step=`expr $step + $xstat`
         ;;
     3)
         title="Camera's FTP User Name For This Machine"
         m="${m}Enter the user name the camera will use when connecting to "
         m="${m}this machine via FTP to upload images."
-        confvalbox "$title" "$m$esc" um_cam_user
+        confvalbox "$title" "$m$esc" um_cam_user > /dev/null
         step=`expr $step + $?`
         ;;
     4)
         title="Camera's FTP Password For This Machine"
         m="${m}Enter the password the camera will use when connecting to "
         m="${m}this machine via FTP to upload images."
-        confvalbox "$title" "$m$esc" um_cam_pass
+        confvalbox "$title" "$m$esc" um_cam_pass > /dev/null
         step=`expr $step + $?`
         ;;
     5)
         title="Number of Days to Save Images On This Machine"
         m="${m}Enter the number of days images should be saved on this "
         m="${m}after they have uploaded to the cloud server. This has no "
-        m="${m}effect on the number of days the clould server will save "
+        m="${m}effect on the number of days the cloud server will save "
         m="${m}the images."
-        confvalbox "$title" "$m$esc" um_retain_days
-        step=`expr $step + $?`
+        rval="`confvalbox "$title" "$m$esc" um_retain_days`"
+        xstat=$?
+        if [ $xstat = $Next ] # if Next button pressed, validate input
+        then
+            if ! [ "$rval" -gt 0 ]
+            then
+                title="Error in Number of Days"
+                m="Number of days must be a positive integer."
+                whiptail --title "$title" --msgbox "$m" 8 $width
+                continue    # repeat this step
+            fi
+        fi
+        step=`expr $step + $xstat`
         ;;
     6)
         title="Domain Name of the Cloud Server"
         m="${m}Enter the domain name for the cloud server that this "
         m="${m}machine will upload images to, e.g., yourneighborhood.org."
-        confvalbox "$title" "$m$esc" cs_name
+        confvalbox "$title" "$m$esc" cs_name > /dev/null
         step=`expr $step + $?`
         ;;
     7)
         title="Cloud Server Account Name"
         m="${m}Enter the user name of the cloud server account to which "
         m="${m}this machine will upload images."
-        confvalbox "$title" "$m$esc" cs_user
+        confvalbox "$title" "$m$esc" cs_user > /dev/null
         step=`expr $step + $?`
         ;;
     8)
         title="Cloud Server Account Password"
         m="${m}Enter the password for the cloud server account to which "
         m="${m}this machine will upload images."
-        confvalbox "$title" "$m$esc" cs_pass
+        confvalbox "$title" "$m$esc" cs_pass > /dev/null
         step=`expr $step + $?`
         ;;
     9)
@@ -185,7 +219,7 @@ get_info() {
         m="${m}is usually a domain name representing the domain portion "
         m="${m}of the URL where the images can be viewed, e.g., "
         m="${m}images.yourneighborhood.org."
-        confvalbox "$title" "$m$esc" cs_ftp_dir
+        confvalbox "$title" "$m$esc" cs_ftp_dir > /dev/null
         step=`expr $step + $?`
         ;;
     10)
