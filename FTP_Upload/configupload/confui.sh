@@ -173,7 +173,7 @@ get_info() {
         ;;
     5)
         title="Number of Days to Save Images On This Machine"
-        m="${m}Enter the number of days images should be saved on this machine"
+        m="${m}Enter the number of days images should be saved on this machine "
         m="${m}after they have uploaded to the cloud server. This has no "
         m="${m}effect on the number of days the cloud server will save "
         m="${m}the images."
