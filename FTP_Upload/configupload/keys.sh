@@ -23,7 +23,7 @@ setupkeypair () {
     if [ -e $privkeyfile ]
     then
         genpubkey=""
-        if ! genpubkey="`$SUDOLU ssh-keygen -y -f $privkeyfile < /dev/null`"
+        if ! genpubkey="`$SUDOLU ssh-keygen -q -y -f $privkeyfile < /dev/null`"
         then
             echo "Moving bad private key aside"
             mv $privkeyfile $privkeyfile.orig
@@ -59,8 +59,10 @@ setupkeypair () {
     echo "No key pair set up with $racct, setting one up now..."
 
     # if there's an existing private key, then check for a public key.
+    # if we have a public key that doesn't match the private key,
+    # move it aside.
     # If we don't have a public key, or the one we have doesn't match
-    # the private key, save the correct public key to a new file
+    # the private key, generate and save the correct public key
     #
     local pubkeyfile=$HOME/.ssh/id_rsa.pub
     if genpubkey="`echo | $SUDOLU ssh-keygen -q -y -f $privkeyfile`"
@@ -68,8 +70,13 @@ setupkeypair () {
         local pubkey="`sed 's/\([^ ][^ ]*  *[^ ][^ ]*\).*$/\1/' $pubkeyfile`"
         if [ $? != 0 -o "$pubkey" != "$genpubkey" ]
         then
-            pubkeyfile=$HOME/.ssh/id_rsa.uploadconfig.pub
-            echo "$genpubkey" "$luser@$um_name" | \
+            if [ -e "$pubkeyfile" ]
+            then
+                echo "Moving bad public key file aside to $pubkeyfile.orig" \
+                    | tee /dev/tty
+                mv "$pubkeyfile" "$pubkeyfile.orig"
+            fi
+            echo "$genpubkey" "$luser@`hostname`" | \
                 $SUDOLU tee $pubkeyfile > /dev/null
         fi
 
@@ -84,7 +91,8 @@ setupkeypair () {
 
     # copy pub key to cloud server
     #
-    $SUDOLU sshpass -p"$cs_pass" ssh-copy-id -f -i "$pubkeyfile" "$racct"
+    $SUDOLU sshpass -p"$rpass" ssh-copy-id -f -i "$pubkeyfile" "$racct" \
+        > /dev/null
 
     # now see if we can log in
     #
