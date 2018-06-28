@@ -34,6 +34,10 @@ log_dir=$var_dir/log
 inc_dir=$var_dir/incoming
 proc_dir=$var_dir/processed
 initd_dir=/etc/init.d
+tun_code_dir=/opt/cktunnel
+tun_config_dir=/etc/opt/cktunnel
+tun_var_dir=/var/opt/cktunnel
+tun_log_dir=$tun_var_dir/log
 
 # log file for this script
 scriptlog=configupload.log
@@ -101,6 +105,10 @@ configure() {
     create_dir $log_dir
     create_dir $inc_dir
     create_dir $proc_dir
+    create_dir $tun_code_dir
+    create_dir $tun_config_dir
+    create_dir $tun_var_dir
+    create_dir $tun_log_dir
 
     # download the current ftp_upload source
     #
@@ -109,8 +117,12 @@ configure() {
     local our_dir=`dirname $(readlink -e "$0")`
     cp $our_dir/../src/ftp_upload.py $code_dir
     cp $our_dir/../src/ftp_upload_example.conf $config_dir
-    
-    # download and install the init script
+    cp $our_dir/../tunnel/cktunnel.sh $tun_code_dir/cktunnel
+    chmod +x $tun_code_dir/cktunnel
+    cp $our_dir/../configupload/utils.sh $tun_code_dir
+    cp $our_dir/../tunnel/cktunnel_example.conf $tun_config_dir
+
+    # install the ftp_upload init script
     #
     local tgt=$initd_dir/ftp_upload
     rm -f $tgt
@@ -119,13 +131,26 @@ configure() {
     chown root:root $tgt
     update-rc.d ftp_upload defaults 
 
-    # set up the config values for ftp_upload
+    # install the cktunnel init script
+    #
+    tgt=$initd_dir/cktunnel
+    rm -f $tgt
+    cp $our_dir/../initscript/cktunnel $tgt
+    # set user that cktunnel will run under
+    set_config_value $tgt RUNASUSER `getluser`
+    chmod 755 $tgt
+    chown root:root $tgt
+    update-rc.d cktunnel defaults 
+
+    # set up the config values for ftp_upload & cktunnel
     #
     task="configuring Neighborhood Guard software"
     echo "***** $task" | tee /dev/tty
-        local conf="$config_dir/ftp_upload.conf"
-    cp "$config_dir/ftp_upload_example.conf" "$conf"
+
     
+    # ftp_upload conf
+    local conf="$config_dir/ftp_upload.conf"
+    cp "$config_dir/ftp_upload_example.conf" "$conf"
     set_config_value $conf ftp_server "`get_config $cfg cs_name`"
     set_config_value $conf ftp_username "`get_config $cfg cs_user`"
     set_config_value $conf ftp_password "`get_config $cfg cs_pass`"
@@ -133,6 +158,13 @@ configure() {
     set_config_value $conf retain_days "`get_config $cfg um_retain_days`"
     set_config_value $conf incoming_location $inc_dir
     set_config_value $conf processed_location $proc_dir
+
+    # cktunnel conf
+    conf="$tun_config_dir/cktunnel.conf"
+    cp "$tun_config_dir/cktunnel_example.conf" "$conf"
+    local user="`get_config $cfg cs_user`"
+    local server="`get_config $cfg cs_name`"
+    set_config_value $conf acct "$user@$server"
 
     # configure for camera FTP.  It seems that the only simple way to
     # deny login to the camera user but allow the camera user to connect
@@ -187,6 +219,10 @@ configure() {
     task="starting ftp_upload"
     echo "***** $task" | tee /dev/tty
     service ftp_upload start
+    
+    task="starting cktunnel"
+    echo "***** $task" | tee /dev/tty
+    service cktunnel start
     
     # Turn off error trap
     set +e

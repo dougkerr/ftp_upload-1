@@ -88,6 +88,21 @@ string with trailing spaces "
     assertEquals "get_config results" "$expected" "$result"
 }
 
+# test get_config when the name doesn't exist in the config file
+# but the caller has supplied a default value
+test_get_config_default_value() {
+    ttf_config=_ttf_config.conf
+    cat > $ttf_config << 'END_OF_FILE'
+[default]
+cs_name: gooddomain.org
+cs_user: theuser
+END_OF_FILE
+
+    stdout=`get_config $ttf_config foo defvalue`
+    assertEquals 0 $?       # get_config returns zero
+    assertEquals defvalue "$stdout"     # stdout is empty string
+}
+
 # test get_config when the config file does not exist
 test_get_config_no_file() {
     stdout=`get_config this_file_doesnt_exist foo`
@@ -105,7 +120,7 @@ cs_user: theuser
 END_OF_FILE
 
     stdout=`get_config $ttf_config foo`
-    assertEquals 0 $?       # get config returns zero
+    assertEquals 0 $?       # get_config returns zero
     assertNull "$stdout"    # stdout is empty string
 }
 

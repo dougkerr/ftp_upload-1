@@ -1,6 +1,6 @@
 # Set the value of a name=value string in a config file to the 
 # specified value.  
-# If the file does not exist, or is not writeable, return non-zero value.
+# If the file does not exist, or is not writeable, return non-zero status.
 #
 # usage: set_config_value file name value
 #
@@ -18,16 +18,24 @@ set_config_value() {
 }
 
 # Retrieve the configuration value for the given name from the
-# given configuration file.  Output value to stdout.
+# given configuration file.  Output the value to stdout.
 # If the name does not exist in the config file, or if it has no
-# value associated with it, output an empty string to stdout.
+# value associated with it, ether output an empty string to stdout, or
+# if a default value has been supplied, output that instead.
 # If the config file doesn't exist or can't be opened,
-# return a non-zero value.
+# return a non-zero status.
 #
-# usage: get_config file name
+# usage: get_config config_file name [default_value]
 #
 get_config() {
-    sed -n "s|^$2\s*[:=]\s*\(.*\S\)\s*$|\1|p" $1 2> /dev/null
+    local val status
+    val=`sed -n "s|^$2\s*[:=]\s*\(.*\S\)\s*$|\1|p" $1 2> /dev/null`
+    status=$?
+    if [ $status -ne 0 ]
+    then
+        return $status
+    fi
+    echo -n ${val:="$3"}
 }
 
 # get the original logged in user (because logname and "who am i" don't work)
