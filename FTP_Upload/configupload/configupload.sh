@@ -209,15 +209,17 @@ configure() {
     
     task="setting up SSH key pair with cloud server"
     echo "***** $task" | tee /dev/tty
-        local luser="`getluser`"
+    local luser="`getluser`"
     local cs_user="`get_config $cfg cs_user`"
     local cs_name="`get_config $cfg cs_name`"
     local cs_pass="`get_config $cfg cs_pass`"
     setupkeypair "$luser" "$cs_user@$cs_name" "$cs_pass"
     # create tunnel flags dir on cloud server for cktunnel
-    ssh "$cs_user@cs_name" "mkdir -f -m 700 .tunnelflags" 
 
-    
+    task="creating tunnel-flags directory on cloud server"
+    echo "***** $task" | tee /dev/tty
+    sudo -u $luser -H ssh "$cs_user@$cs_name" "mkdir -p -m 700 .tunnelflags" 
+
     task="starting ftp_upload"
     echo "***** $task" | tee /dev/tty
     service ftp_upload start
