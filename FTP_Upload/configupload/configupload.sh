@@ -25,7 +25,7 @@ install_wait() {
 }
 
 
-# directories required for install of ftp_upload
+# directories required for install of ftp_upload and cktunnel
 #
 code_dir=/opt/ftp_upload
 config_dir=/etc/opt/ftp_upload
@@ -214,6 +214,8 @@ configure() {
     local cs_name="`get_config $cfg cs_name`"
     local cs_pass="`get_config $cfg cs_pass`"
     setupkeypair "$luser" "$cs_user@$cs_name" "$cs_pass"
+    # create tunnel flags dir on cloud server for cktunnel
+    ssh "$cs_user@cs_name" "mkdir -f -m 700 .tunnelflags" 
 
     
     task="starting ftp_upload"
