@@ -36,8 +36,7 @@ proc_dir=$var_dir/processed
 initd_dir=/etc/init.d
 tun_code_dir=/opt/cktunnel
 tun_config_dir=/etc/opt/cktunnel
-tun_var_dir=/var/opt/cktunnel
-tun_log_dir=$tun_var_dir/log
+systemd_dir=/lib/systemd/system
 
 # log file for this script
 scriptlog=configupload.log
@@ -107,10 +106,8 @@ configure() {
     create_dir $proc_dir
     create_dir $tun_code_dir
     create_dir $tun_config_dir
-    create_dir $tun_var_dir
-    create_dir $tun_log_dir
 
-    # download the current ftp_upload source
+    # install the current ftp_upload source from local directories
     #
     task="installing Neighborhood Guard software"
     echo "***** $task" | tee /dev/tty
@@ -131,16 +128,18 @@ configure() {
     chown root:root $tgt
     update-rc.d ftp_upload defaults 
 
-    # install the cktunnel init script
+    # install the cktunnel service file
     #
-    tgt=$initd_dir/cktunnel
-    rm -f $tgt
-    cp $our_dir/../initscript/cktunnel $tgt
-    # set user that cktunnel will run under
-    set_config_value $tgt RUNASUSER `getluser`
+    systemctl stop cktunnel.service || true
+    systemctl disable cktunnel.service || true
+    tgt=$systemd_dir/cktunnel.service
+    rm -f "$tgt"
+    cp $our_dir/../tunnel/cktunnel.service "$tgt"
+    # set user that cktunnel will run as
+    set_config_value $tgt User `getluser`
     chmod 755 $tgt
     chown root:root $tgt
-    update-rc.d cktunnel defaults 
+    systemctl enable cktunnel.service
 
     # set up the config values for ftp_upload & cktunnel
     #
@@ -226,7 +225,7 @@ configure() {
     
     task="starting cktunnel"
     echo "***** $task" | tee /dev/tty
-    service cktunnel start
+    systemctl start cktunnel.service
     
     # Turn off error trap
     set +e
