@@ -144,7 +144,8 @@ get_info() {
         xstat=$?
         if [ $xstat = $Next ] # if Next button pressed, validate input
         then
-            if ! echo "$rval" | grep -E '^[A-Za-z0-9][-A-Za-z0-9]{1,14}$'
+            if ! echo "$rval" | grep -E '^[A-Za-z0-9][-A-Za-z0-9]{1,14}$' \
+                > /dev/null
             then
                 title="Error in Computer Name"
                 m=""

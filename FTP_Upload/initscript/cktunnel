@@ -9,12 +9,17 @@
 # Description:       Check for request to establish tunnel for remote access
 ### END INIT INFO
 
+tstamp () {
+    date --iso-8601=seconds
+}
+
 set -e
 
 SCRIPT="/opt/cktunnel/cktunnel"
 NAME=`basename "$SCRIPT"`
 PIDFILE=/var/run/$NAME.pid
-RUNASUSER=dougk
+RUNASUSER=placeholder
+LOGDIR=/var/opt/$NAME/log
 
 # Check for daemon presence
 [ -x "$SCRIPT" ] || exit 4  # program unknown
@@ -28,20 +33,25 @@ RUNASUSER=dougk
 case "$1" in
   start)
     log_begin_msg "Starting $NAME..."
+    if [ -e "$LOGDIR/$NAME.log" ]
+    then
+        mv "$LOGDIR/$NAME.log" "$LOGDIR/$NAME.`date '+%Y%m%d-%H%M%S'`.log"
+    fi
     start-stop-daemon --start --chuid $RUNASUSER --oknodo --background \
-        --startas "$SCRIPT" --chdir "`dirname $SCRIPT`" \
-        --verbose --pidfile "$PIDFILE" --make-pidfile --remove-pidfile
+        --startas "$SCRIPT" --chdir "`dirname $SCRIPT`" --no-close \
+        --verbose --pidfile "$PIDFILE" --make-pidfile --remove-pidfile \
+        >> $LOGDIR/$NAME.log 2>&1
     log_end_msg $?
     ;;
   stop)
     log_begin_msg "Stopping $NAME..."
-    #start-stop-daemon --stop --quiet --oknodo --name $NAME
+    echo `tstamp` "Stopping $NAME" >> "$LOGDIR/$NAME.log"
     start-stop-daemon --stop --quiet --oknodo \
         --pidfile $PIDFILE --remove-pidfile
     log_end_msg $?
     ;;
   status)
-    start-stop-daemon --status --name $NAME
+    start-stop-daemon --status --pidfile $PIDFILE --remove-pidfile
     ;;
   restart|reload|force-reload) 
     $0 stop

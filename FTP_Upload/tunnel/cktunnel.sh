@@ -24,6 +24,12 @@
 
 . ./utils.sh
 
+tstamp () {
+    date --iso-8601=seconds
+}
+
+echo `tstamp` "Starting `basename $0`"
+
 # find the configuration file
 #
 for d in . /etc/opt/cktunnel /etc/cktunnel /etc
@@ -38,7 +44,7 @@ do
 done
 if [ -z "$path" ] 
 then
-    echo "$0: Can't find configuration file!" 1>&2
+    echo "`tstamp` $0: Can't find configuration file! Exiting." 1>&2
     exit 1
 fi
 
@@ -53,7 +59,7 @@ def_lclport=`get_config "$path" def_lclport 22`
 
 if [ -z "$acct" ]
 then
-    echo "$0: No intermediate server account specified!" 1>&2
+    echo "`tstamp` $0: No intermediate server account specified! Exiting." 1>&2
     exit 1
 fi
     
@@ -83,13 +89,13 @@ while true; do
     # on this machine
     #
     if [ -n "$port" ]; then
-        ssh -i $keyfile $acct "echo $port `date` > $replyfp"
+        ssh -i $keyfile $acct "echo $port `tstamp` > $replyfp"
 
         # ssh args to set up tunnel for VNC access
         t1="-R $port:localhost:$lclport"
 
         # Log the action to the console
-        echo `date` Creating tunnel $t1
+        echo `tstamp` Creating tunnel $t1
 
         # Set up tunnel in "background"
         ssh -f -i $keyfile -N $t1 $acct
