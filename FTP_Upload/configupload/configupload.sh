@@ -121,6 +121,8 @@ configure() {
 
     # install the ftp_upload init script
     #
+    service ftp_upload stop || true
+    update-rc.d -f ftp_upload remove || true
     local tgt=$initd_dir/ftp_upload
     rm -f $tgt
     cp $our_dir/../initscript/ftp_upload $tgt

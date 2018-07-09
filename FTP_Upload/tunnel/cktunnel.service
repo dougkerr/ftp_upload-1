@@ -7,7 +7,7 @@ Type=simple
 User=placeholder
 WorkingDirectory=/opt/cktunnel
 ExecStart=/opt/cktunnel/cktunnel
-Restart=on-failure # or always, on-abort, etc
+Restart=always
 
 [Install]
 WantedBy=multi-user.target
