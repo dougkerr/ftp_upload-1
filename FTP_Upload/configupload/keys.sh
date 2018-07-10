@@ -51,8 +51,8 @@ setupkeypair () {
     #
     if ! echo "$sshmsg" | grep -i  "permission denied" > /dev/null
     then
-        echo "Unable to connect to $racct" | tee /dev/tty
-        echo "$sshmsg" | tee /dev/tty
+        echo "Unable to connect to $racct"
+        echo "$sshmsg"
         return 1
     fi
 
@@ -72,7 +72,7 @@ setupkeypair () {
         then
             if [ -e "$pubkeyfile" ]
             then
-                echo "Moving bad public key file aside to $pubkeyfile.orig" \
+                echo "(Moving bad public key file aside to $pubkeyfile.orig)" \
                     | tee /dev/tty
                 mv "$pubkeyfile" "$pubkeyfile.orig"
             fi
@@ -100,8 +100,7 @@ setupkeypair () {
         -o 'PreferredAuthentications=publickey' \
         -o 'StrictHostKeyChecking=no' $racct exit 2>&1`"
     then
-        echo "Cannot ssh to server even though we just set up a key pair!" \
-            | tee /dev/tty
+        echo "Cannot ssh to server even though we just set up a key pair!"
         return 1
     fi
 

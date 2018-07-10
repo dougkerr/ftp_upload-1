@@ -8,14 +8,20 @@
 install_wait() {
     local pkgs="$1"
     local wtime=5
-    local trys=12
+    local maxtries=36
+    local tries=$maxtries
     while ! apt-get -qqy install $pkgs
     do
-        echo -n "Install attempt failed: $1. Will retry for one minute  "
+        if [ $tries -eq $maxtries ]
+        then
+            echo "(First install attempt failed." \
+                "Will retry for up to three minutes.)" \
+                | /dev/tty
+        fi
         echo "Waiting $wtime seconds and trying again."
         sleep "$wtime"
-        trys=`expr $trys - 1`
-        if [ "$trys" = 0 ]
+        tries=`expr $tries - 1`
+        if [ "$tries" = 0 ]
         then
             echo "CANNOT INSTALL REQUIRED SYSTEM SOFTWARE"
             return 1
@@ -48,12 +54,13 @@ nologinshell=/bin/false
 #
 task=""
 
-# on unexpected exit, print an error message with the approximate location
-# of the error
+# on unexpected exit, print an error message and the error output for that task
 #
 errorexit() {
+    tac "$scriptlog" | sed "/$task/,\$d" | tac >&2
     echo "An unexpected error occurred while $task." | tee -a "$scriptlog" >&2
-    echo "Please see the log file: $scriptlog." | tee -a "$scriptlog" >&2
+    echo "Please see above or examine the log file: $scriptlog." \
+        | tee -a "$scriptlog" >&2
     exit 1
 }
 
