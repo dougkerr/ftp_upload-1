@@ -1,4 +1,13 @@
 #!/bin/sh
+#
+# This script will collect configuration values from the user, then install
+# and configure all software required to turn this machine into a Neighborhood
+# Guard upload machine.  It will receive images from properly configured IP
+# cameras and upload them to a cloud server running Neighborhood Guard's
+# CommunityView software.
+
+# version of the configupload software
+version="placeholder"
 
 . ./utils.sh
 . ./confui.sh
@@ -58,9 +67,12 @@ task=""
 #
 errorexit() {
     tac "$scriptlog" | sed "/$task/,\$d" | tac >&2
+    echo -n "\033[31m\033[1m" > /dev/tty   # red, bold text
     echo "An unexpected error occurred while $task." | tee -a "$scriptlog" >&2
     echo "Please see above or examine the log file: $scriptlog." \
         | tee -a "$scriptlog" >&2
+    echo -n "\033[0m" > /dev/tty    # reset text style
+    echo `date --rfc-3339=seconds` "Error exit configupload" >> "$scriptlog"
     exit 1
 }
 
@@ -255,7 +267,7 @@ main() {
     fi
     
     # start the log
-    echo `date --rfc-3339=seconds` "Start configupload" >> $scriptlog
+    echo "\n`date --rfc-3339=seconds` Start configupload" >> "$scriptlog"
 
     
     # Get the config info from the user.
@@ -263,11 +275,14 @@ main() {
     #
     if ! get_info
     then
+        echo `date --rfc-3339=seconds` "User cancelled configupload" \
+            >> "$scriptlog"
         exit 1
     fi
     
     # configure this machine
-    configure >> $scriptlog 2>&1
+    configure >> "$scriptlog" 2>&1
+    echo `date --rfc-3339=seconds` "Normal exit configupload" >> "$scriptlog"
 }
     
 

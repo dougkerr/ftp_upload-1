@@ -1,3 +1,7 @@
+#!/bin/sh
+#
+# This file provides the whiptail UI for to allow the user to enter
+# configuration values for configupload
 
 # names of the config file and its associated temp file
 conf_file=upload.conf
@@ -80,7 +84,7 @@ create_conftemp() {
     fi
 
     # put the new comment header on the temp file.
-    # Note: sed needs at least one line in the file to that 
+    # Note: sed needs at least one line in the file so that 
     # Line 1 can be used as an address
     local cmt="#>> Configuration file created by `getluser`@`hostname`\n"
     cmt="${cmt}#>> on `date`\n#>>"
@@ -106,17 +110,25 @@ get_info() {
     local title
     case $step in
     1)
-        title="Introduction"
-        m="${m}This script will configure this machine to receive images "
+        title="Neighborhood Guard Upload Machine Configuration v$version"
+        m="${m}This program will configure this machine to receive images "
         m="${m}from a camera and upload them "
         m="${m}to a cloud server running Neighborhood Guard's "
         m="${m}CommunityView software. "
         m="${m}It will ask you for some configuration values, then install and "
         m="${m}configure the software required. "
-        m="${m}This script does not use the mouse. "
+        m="${m}This program does not use the mouse. "
         m="${m}Move the cursor by using the TAB key or the arrow keys. "
+        m="${m}\n\n"
+        m="${m}NOTE: If you have not upgraded this machine in the last "
+        m="${m}couple months (or ever), press ESC to cancel and run these two "
+        m="${m}commands:\n"
+        m="${m}\n  sudo apt-get upgdate"
+        m="${m}\n  sudo apt-get upgrade\n\n"
+        m="${m}The second command could take a half hour or more to complete. "
+        m="${m}Then, run this program again."
 
-        whiptail --title "$title" --msgbox "$m$esc" 16 $width
+        whiptail --title "$title" --msgbox "$m" 21 70
         if [ $? = 0 ]  # OK button
         then
             step=`expr $step + 2`
