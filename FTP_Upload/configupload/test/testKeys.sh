@@ -1,25 +1,37 @@
 # tell the script under test not to proceed with normal execution 
-
 UNIT_TEST_IN_PROGRESS=1
 
 . ../keys.sh 
+. ../utils.sh
 
-# XXX configure these more globally?
-test_racct="testuser@10.0.2.6"
-test_rpass=testpass
+# config file for testing
+test_conf="test.conf"
+
 test_privkey=$HOME/.ssh/id_rsa
 test_user=`whoami`
 
 setUp() {
-    # delete the remote host's SSH info
-    sshpass -p"$test_rpass" ssh "$test_racct" rm -rf .ssh
-    sshpass -p"$test_rpass" ssh "$test_racct" 'ls -d .ssh > /dev/null 2>&1'
-    if [ "$?" -ne 2 ]   # status 2 means ls didn't find .ssh
-    then
-        fail "setUp's removal of remote host's .ssh failed."
-    fi
+    # get the values from the conf file
+    test_ruser=`get_config "$test_conf" test_ruser`
+    test_rserver=`get_config "$test_conf" test_rserver`
+    test_rpass=`get_config "$test_conf" test_rpass`
 
-    # delete the local host's SSH info
+    # set up the remote testing account
+    if [ -z "$test_ruser" -o -z "$test_rserver" ]
+    then
+        msg1="Remote server test account not set up in $test_conf."
+        msg2="ALL TESTS WILL FAIL."
+        fail "$msg1 $msg2"
+        # make the ssh errors that will follow more understandable
+        test_ruser=remote_user_not_specified
+        test_rserver=remote_server_not_specified
+        test_rpass=remote_password_not_specified
+    fi
+    test_racct="$test_ruser@$test_rserver"
+
+    # delete the local host's SSH info.
+    # Do this first so that other subsequent ssh operations
+    # won't get confused by any test garbage we have
     rm -rf $HOME/.ssh
     ls -d $HOME/.ssh > /dev/null 2>&1
     if [ "$?" -ne 2 ]   # status 2 means ls didn't find .ssh
@@ -31,6 +43,15 @@ setUp() {
     # to prevent SSH from complaining
     ssh -o 'PreferredAuthentications=publickey' -o 'StrictHostKeyChecking=no' \
         "$test_racct" true > /dev/null 2>&1
+
+    # delete the remote host's SSH info
+    sshpass -p"$test_rpass" ssh "$test_racct" 'rm -rf .ssh'
+    sshpass -p"$test_rpass" ssh "$test_racct" 'ls -d .ssh > /dev/null 2>&1'
+    lsstatus=$?
+    if [ $lsstatus -ne 2 ]   # status 2 means ls didn't find .ssh
+    then
+        fail "setUp's removal of remote host's .ssh failed; status=$lsstatus"
+    fi
 }
 
 # run setupkeypair(), check it's return status and also verify that an
@@ -39,7 +60,7 @@ setUp() {
 run_setupkeypair() {
     if ! setupkeypair $test_user "$test_racct" "$test_rpass" > /dev/null 2>&1
     then
-        fail setupkeypair returns failure
+        fail "setupkeypair returns failure"
     fi
     if ! ssh "$test_racct" true
     then
