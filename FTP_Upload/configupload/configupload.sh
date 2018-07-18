@@ -110,7 +110,7 @@ configure() {
         | debconf-set-selections   # info output to log
         
     # install all the required packages
-    local pkgs="openssh-server sshpass tightvncserver proftpd samba"
+    local pkgs="openssh-server sshpass tightvncserver proftpd samba shunit2"
     install_wait "$pkgs"    # info output to log
 
     # create the ftp_upload directories for code, log and images
