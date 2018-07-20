@@ -81,7 +81,7 @@ replyfp=$FLAGSDIR/$target.reply
 int_server_port=$RANDPORT
 echo "$int_server_port requested on $ACCT"
 
-# Script to execute on the intermediate server
+# Remote script to be executed on the intermediate server
 #
 rscript="rm -f $replyfp; \
 echo $int_server_port > $requestfp; \
@@ -89,13 +89,25 @@ while [ ! -e $replyfp ]; do \
   sleep 2; \
 done; \
 cat $replyfp; \
-echo Tunnel ready... ; \
-sleep 99999"
+echo Tunnel ready...; \
+sleep 120"
 
 # Tunnel description for SSH
 #
 t1="-L $local_port:localhost:$RANDPORT"
 
-# Start the tunnel
+# Start the tunnel, and send the output from the remote script to the tty.
+# As soon as the remote script indicates that the tunnel from the server
+# to the target is ready, this script will terminate.
+# The tunnel below will continue to run in the background.
+# After 120 seconds, if this tunnel is not connected, tear it down, otherwise,
+# tear it down when the connection terminates
 #
-ssh -C -i $KEYFILE $t1 $ACCT "$rscript"
+ssh -C -f -i $KEYFILE $t1 $ACCT "$rscript" |\
+while read line; \
+do \
+    if echo "$line" | tee /dev/tty | grep "Tunnel ready" > /dev/null; \
+    then \
+        break; \
+    fi; \
+done

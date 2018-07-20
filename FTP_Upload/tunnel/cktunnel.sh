@@ -97,8 +97,11 @@ while true; do
         # Log the action to the console
         echo Creating tunnel $t1
 
-        # Set up tunnel in "background"
-        ssh -f -i $keyfile -N $t1 $acct
+        # Set up tunnel (in background to let loop continue).
+        # After 120 seconds, if the tunnel is not connected, tear it down,
+        # otherwise, tear it down when the connection terminates
+        #
+        ssh -f -i $keyfile $t1 $acct "sleep 120"
     fi
 
     # sleep before checking again for a request
