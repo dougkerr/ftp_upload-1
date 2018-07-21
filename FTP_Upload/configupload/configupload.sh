@@ -24,8 +24,7 @@ install_wait() {
         if [ $tries -eq $maxtries ]
         then
             echo "(First install attempt failed." \
-                "Will retry for up to three minutes.)" \
-                | /dev/tty
+                "Will retry for up to three minutes.)" > /dev/tty
         fi
         echo "Waiting $wtime seconds and trying again."
         sleep "$wtime"
