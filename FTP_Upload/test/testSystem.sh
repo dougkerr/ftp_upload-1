@@ -14,9 +14,10 @@
 
 . ../configupload/utils.sh
 
+mainconf=../configupload/upload.conf
+
 test_ftp_upload() {
     local image=../src/test/SampleImage.jpg
-    local mainconf=../configupload/upload.conf
     local testdate=2010-01-01
     local testcam=camera1
     local fupldconf=/etc/opt/ftp_upload/ftp_upload.conf
@@ -64,7 +65,8 @@ EndOfCommands
 
     # wait for ftp_upload to transfer the files
     #
-    echo "(waiting for ftp_upload to transfer test files)"
+    echo "(waiting for ftp_upload to transfer test files;" \
+        "may take up to one minute)"
     local count=0
     local st=3
     local wt=90
@@ -89,7 +91,39 @@ EndOfCommands
     then
         fail "Wrong number of files transferred: $nfiles"
     fi
-    echo "Success!"
+}
+
+test_tunnel() {
+    local tdir=../tunnel
+    local mname=`get_config "$mainconf" um_name`
+    local lport=33333
+    local tfile="$HOME/.testTunnelFile"
+    local acct=`whoami`
+    local kh="$HOME/.ssh/known_hosts"
+
+    echo "(Note: type your password when prompted below)"
+
+    # copy our known_hosts file and
+    # add localhost to known_hosts to avoid question from ssh
+    cp -p "$kh" "$kh.save"
+    ssh-keyscan localhost >> "$kh" 2> /dev/null
+
+    # remove any file from previous test
+    rm -f "$tfile"
+
+    # start the tunnel and touch a test file via the tunnel
+    $tdir/starttunnel.sh $mname $lport
+    ssh $acct@localhost -p $lport "touch $tfile"
+
+    # put the known_hosts file back the way it was
+    mv "$kh.save" "$kh"
+
+    # see if we succeeded in touching the file
+    if [ ! -e "$tfile" ]
+    then
+        fail "Test file not found."
+    fi
+    rm "$tfile"
 }
 
 . `which shunit2`

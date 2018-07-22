@@ -79,7 +79,7 @@ requestfp=$FLAGSDIR/$target.request
 replyfp=$FLAGSDIR/$target.reply
 
 int_server_port=$RANDPORT
-echo "$int_server_port requested on $ACCT"
+#echo "$int_server_port requested on $ACCT"
 
 # Remote script to be executed on the intermediate server
 #
@@ -88,7 +88,6 @@ echo $int_server_port > $requestfp; \
 while [ ! -e $replyfp ]; do \
   sleep 2; \
 done; \
-cat $replyfp; \
 echo Tunnel ready...; \
 sleep 120"
 
