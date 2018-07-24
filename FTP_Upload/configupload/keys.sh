@@ -1,3 +1,25 @@
+#!/bin/sh
+################################################################################
+#
+# Copyright (C) 2018 Neighborhood Guard, Inc.  All rights reserved.
+# Original author: Douglas Kerr
+# 
+# This file is part of FTP_Upload.
+# 
+# FTP_Upload is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# FTP_Upload is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+# 
+# You should have received a copy of the GNU Affero General Public License
+# along with FTP_Upload.  If not, see <http://www.gnu.org/licenses/>.
+#
+################################################################################
 
 # see if an ssh key pair is already set up between the current user on 
 # this machine and the cloud server. If not, set one up now.

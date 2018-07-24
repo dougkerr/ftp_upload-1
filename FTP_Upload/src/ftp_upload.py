@@ -1,6 +1,6 @@
 ################################################################################
 #
-# Copyright (C) 2013 Neighborhood Guard, Inc.  All rights reserved.
+# Copyright (C) 2013-2018 Neighborhood Guard, Inc.  All rights reserved.
 # Original author: Jesper Jercenoks
 # 
 # This file is part of FTP_Upload.

@@ -1,4 +1,25 @@
 @echo off
+rem ############################################################################
+rem
+rem Copyright (C) 2018 Neighborhood Guard, Inc.  All rights reserved.
+rem Original author: Douglas Kerr
+rem 
+rem This file is part of FTP_Upload.
+rem 
+rem FTP_Upload is free software: you can redistribute it and/or modify
+rem it under the terms of the GNU Affero General Public License as published by
+rem the Free Software Foundation, either version 3 of the License, or
+rem (at your option) any later version.
+rem 
+rem FTP_Upload is distributed in the hope that it will be useful,
+rem but WITHOUT ANY WARRANTY; without even the implied warranty of
+rem MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+rem GNU Affero General Public License for more details.
+rem 
+rem You should have received a copy of the GNU Affero General Public License
+rem along with FTP_Upload.  If not, see <http://www.gnu.org/licenses/>.
+rem
+rem ############################################################################
 
 rem This script polls an Internet-accessible Linux/Unix server (the
 rem "intermediate server") looking for requests from a client to establish an
