@@ -33,6 +33,15 @@ test_conf="test.conf"
 test_privkey=$HOME/.ssh/id_rsa
 test_user=`whoami`
 
+oneTimeSetUp() {
+    # make sure we have a configuration file
+    if [ ! -e $test_conf ]
+    then
+        fail "***** NO TEST CONFIGURATION FILE ($test_conf) PRESENT! *****"
+        exit 1
+    fi
+}
+
 setUp() {
     # get the values from the conf file
     test_ruser=`get_config "$test_conf" test_ruser`
