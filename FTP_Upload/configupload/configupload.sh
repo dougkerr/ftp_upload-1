@@ -28,7 +28,7 @@
 # CommunityView software.
 
 # version of the configupload software
-version="placeholder"
+version="2.0.0"
 
 . ./utils.sh
 . ./confui.sh
