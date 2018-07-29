@@ -1,12 +1,93 @@
 # Developer Notes for FTP_Upload #
-## Unit Tests ##
-### Overview ###
 
+## Introduction
+With release v2.0.0, we added a simple installer for Debian-derivative Linux
+systems.  We also added a remote access mechanism that works via SSH tunnels.
+Lastly, the tunnel daemon, `cktunnel` and `ftp_upload` program are now 
+run as Linux services.
+
+## Unit and System Tests ##
+### Overview ###
+There are unit tests and system tests included for much of the code.  We use
+PyUnit for the Python code tests (which is part of the standard Python
+distribution) and 
+[shunit2](http://manpages.ubuntu.com/manpages/trusty/man1/shunit2.1.html)
+for the shell scripts such as `configupload.sh` and its supporting files.
+The tests for a given set of code are generally in a `test` subdirectory 
+below the code that will be tested.  These tests are intended to be run
+on the development machine to validate functionality as the code is being
+worked on.
+
+There is also a simple system test that performs an end-to-end check
+of the both the `ftp_upload` 
+and the `cktunnel` functionality after the installation is complete.
+
+### System Tests
+In `FTP_Upload/test` there is a simple system test called 
+`testSystem.sh` that uses `shunit2` to provide test library support. 
+This test must be run on the upload machine (not the development machine) 
+after the installation process is complete.  The cloud server that the
+machine is configured to upload to must also be available.
+
+To run the tests, change to the `FTP_Upload/test` directory on the upload
+machine, and give the command,
+
+     sh testSystem.sh
+
+The first test will place some files image files in the incoming directory
+for `ftp_upload`, and wait until the files are transferred (may
+take up to one minute), then checks
+the cloud server filesystem to see that the files arrived in the proper place.
+
+The second test checks the remote access functionality by requesting a tunnel
+from the upload machine through the cloud server and back to the upload
+machine, and verifies that commands can be executed over it.  
+You will be asked to type the password for your account on the upload machine
+during the test.
+This is not
+really a "remote" access, but it does check the functionality of the tunnel
+system.
+
+At the end of the test run, you should see the following:
+
+    Ran 2 tests.
+    
+    OK
+
+
+### `configupload` Unit Tests
+The unit tests for the `configupload` code are in the 
+`FTP_Upload/configupload/test` directory, and use the `shunit2`
+library.  
+
+Some of the tests validate the code that sets up a key pair with
+the cloud server (`testKeys.sh`).  
+These tests require a test account on an accessible 
+test server stand in for the cloud server.  Prior to running the tests, 
+copy the file `test_example.conf` to `test.conf`,
+and edit it to supply the test server name, account and account password.
+
+Run the tests by giving the following commands in either order:
+
+    sh testUtils.sh
+    sh testKeys.sh
+
+At the end of the test run, you should see the following:
+
+    Ran n tests.
+    
+    OK
+
+where `n` is replaced by the number of tests in each test suite.
+
+### `ftp_upload` Program Tests
 The FTP_Upload "unit tests" were written long after application 
 code was developed, and are more along the lines of system tests 
 than anything else.  The tests are written using PyUnit, which is the
 standard testing framework for Python, and is included in the Python
 distribution as the `unittest` library module.
+These tests, like the `ftp_upload` code itself, work under both Linux
+and Windows.
 
 The test code expects a local FTP server to be running on the test
 machine and an FTP account set up for testing
@@ -104,7 +185,8 @@ command, e.g., MKDIR a/b/c where none of a, b or c exist before the command
 is given.  This is not the behavior of ProFTPd, this FileZilla behavior
 masked a bug in testing of FTP_Upload until this was understood.
 
-You will need to have an account set up on the local FTP server for the test code
+You will need to have an account set up on the local FTP server 
+for the test code to uses
 that has the same user name and password as are configured in `test.conf`. 
 Both the account under which the tests are being run, and the testing account
 on the local test FTP server must have all permissions on the `ftp_testing_dir`
@@ -163,7 +245,7 @@ If you are using Eclipse, it will set the `PYTHONPATH` automatically.
 The easiest way to run the tests is to `cd` to the `FTP_Upload/src/test` directory and
 give the command,
 
-	python TestUpload.py
+	python -u TestUpload.py
 	
 If you are using Eclipse, just select TestUpload.py either in the source 
 window or the Package Explorer and click the Run button.

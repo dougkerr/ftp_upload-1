@@ -7,8 +7,7 @@ then installs and configures
 all the required system software plus the FTP_Upload software
 required to turn the system into an upload machine that will accept images
 uploaded from IP cameras and in turn transfer them to a cloud server running
-[Neighborhood Guard's Community View Software](
-https://github.com/NeighborhoodGuard/CommunityView).
+[Neighborhood Guard's Community View Software](https://github.com/NeighborhoodGuard/CommunityView).
 
 We developed the installer on Ubuntu v16.04 LTS, and recommend you use the
 current version of Ubuntu for your upload machine.
@@ -39,7 +38,8 @@ item.
 (or other convenient place).
 
 1. Change to the FTP_Upload/configupload directory within the tree of extracted
-files, and run the script `configupload.sh` as root.  E.g., 
+files, and run the script `configupload.sh` using the `sudo` command,
+and type your password if requested.  For example,
 
         cd ftp_upload-master/FTP_Upload/configupload
         sudo sh configupload.sh
@@ -54,8 +54,8 @@ configuration questions or not. When you select `Install` at the end of the
 questions, the software will be installed, configured and started.
 At that point, the machine is ready to be used as an uploader.
 
-If you later decide you need to go back and change the configuration, 
-simply run the
+1. If you later decide you need to go back and change the configuration, `cd`
+to the `configupload` directory and simply run the installer again:
 
         sudo sh configupload.sh
-command again.
+
