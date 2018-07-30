@@ -57,8 +57,7 @@
 
 # Name of the account, including host name, that will be used as the
 # Internet-accessible endpoint of the tunnels, e.g., myaccount@myhost.com
-#ACCT=myaccount@myhost.com
-ACCT=testuser@10.0.2.8
+ACCT=myaccount@myhost.com
 
 # Name of the directory, relative to the above account's home directory,
 # in which the flag files will be stored.
