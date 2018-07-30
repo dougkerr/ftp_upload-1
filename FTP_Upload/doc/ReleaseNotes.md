@@ -8,12 +8,12 @@ mechanism for Debian Linux derivatives.  It was designed and tested on
 Ubuntu 16.04 LTS and has not yet been tested on other Debian derivatives.
 * Also included is software to allow remote access to the upload machine
 using SSH tunnels.
-* `ftp_upload` is now installed as a Linux service along with 
+* The `ftp_upload` program is now installed as a Linux service along with 
 the remote access tunnel daemon `cktunnel`.
 * The `ftp_upload.py`program is now configured via a .conf file, 
 rather than in Python
 directly, and the `localsettings.py` file has been eliminated.
-* The `ftp_upload.py` has not been materially changed in this release, 
+* The `ftp_upload.py` code has not been materially changed in this release, 
 other than for the new .conf file configuration mechanism.  It has been tested
 on Windows as well as Linux.
 

@@ -3,16 +3,16 @@
 ## Introduction
 With release v2.0.0, we added a simple installer for Debian-derivative Linux
 systems.  We also added a remote access mechanism that works via SSH tunnels.
-Lastly, the tunnel daemon, `cktunnel` and `ftp_upload` program are now 
-run as Linux services.
+Additionally, the tunnel daemon, `cktunnel` and `ftp_upload` program 
+are now run as Linux services.
 
 ## Unit and System Tests ##
 ### Overview ###
 There are unit tests and system tests included for much of the code.  We use
-PyUnit for the Python code tests (which is part of the standard Python
-distribution) and 
+PyUnit (which is part of the standard Python
+distribution) for the Python code tests  and 
 [shunit2](http://manpages.ubuntu.com/manpages/trusty/man1/shunit2.1.html)
-for the shell scripts such as `configupload.sh` and its supporting files.
+to test the shell scripts such as `configupload.sh` and its supporting files.
 The tests for a given set of code are generally in a `test` subdirectory 
 below the code that will be tested.  These tests are intended to be run
 on the development machine to validate functionality as the code is being
@@ -35,8 +35,8 @@ machine, and give the command,
      sh testSystem.sh
 
 The first test will place some files image files in the incoming directory
-for `ftp_upload`, and wait until the files are transferred (may
-take up to one minute), then checks
+for `ftp_upload`, and wait until the files are transferred 
+to the cloud server (may take up to one minute). It then checks
 the cloud server filesystem to see that the files arrived in the proper place.
 
 The second test checks the remote access functionality by requesting a tunnel
@@ -45,7 +45,7 @@ machine, and verifies that commands can be executed over it.
 You will be asked to type the password for your account on the upload machine
 during the test.
 This is not
-really a "remote" access, but it does check the functionality of the tunnel
+really a "remote" access test, but it does check the functionality of the tunnel
 system.
 
 At the end of the test run, you should see the following:
@@ -61,9 +61,9 @@ The unit tests for the `configupload` code are in the
 library.  
 
 Some of the tests validate the code that sets up a key pair with
-the cloud server (`testKeys.sh`).  
+the cloud server (`testKeys.sh`). 
 These tests require a test account on an accessible 
-test server stand in for the cloud server.  Prior to running the tests, 
+test server as a stand in for the cloud server.  Prior to running the tests, 
 copy the file `test_example.conf` to `test.conf`,
 and edit it to supply the test server name, account and account password.
 
@@ -182,11 +182,11 @@ For a Windows test machine, we have no server recommendation at this writing.
 We have tested with FileZilla, which has easy installation and configuration,
 but also allows multiple-level directory paths to be created in a single
 command, e.g., MKDIR a/b/c where none of a, b or c exist before the command
-is given.  This is not the behavior of ProFTPd, this FileZilla behavior
+is given.  This is not the behavior of ProFTPd, and this FileZilla behavior
 masked a bug in testing of FTP_Upload until this was understood.
 
 You will need to have an account set up on the local FTP server 
-for the test code to uses
+for the test code to use
 that has the same user name and password as are configured in `test.conf`. 
 Both the account under which the tests are being run, and the testing account
 on the local test FTP server must have all permissions on the `ftp_testing_dir`

@@ -1,11 +1,12 @@
 # Installing FTP_Upload
 # Installing under Linux
 
-As of v2.0.0, FTP_Upload includes an automated installer for Linux.
+As of v2.0.0, FTP_Upload includes an automated installer for 
+Debian derivatives ofLinux.
 The installer uses a simple UI to ask the user some configuration questions,
 then installs and configures
 all the required system software plus the FTP_Upload software
-required to turn the system into an upload machine that will accept images
+needed to turn the system into an upload machine that will accept images
 uploaded from IP cameras and in turn transfer them to a cloud server running
 [Neighborhood Guard's Community View Software](https://github.com/NeighborhoodGuard/CommunityView).
 
@@ -45,7 +46,7 @@ and type your password if requested.  For example,
         sudo sh configupload.sh
 
 1. The installation software will present a simple user interface which will
-ask you to supply some information that is needed to configure the 
+ask you to supply information that is needed to configure the 
 Neighborhood Guard software such as the domain name of the cloud server
 that is running the CommunityView software, the number of days uploaded images
 should be retained on the upload machine, etc. If you need to, you can abort the
@@ -59,3 +60,19 @@ to the `configupload` directory and simply run the installer again:
 
         sudo sh configupload.sh
 
+## Installing Under Windows
+
+There is no automated process for installation under Windows.
+In general, you need to accomplish the following tasks to have a successful
+installation.
+* Install 2.7.x Python
+* Copy the ftp_upload source code from GitHub and set the configuration
+values
+* Set up ftp_upload to run on start up
+* Set up an FTP server to receive camera images
+* Set power management so that the computer never sleeps
+* Set the Windows system to reboot after a system failure
+* Set the BIOS to start Windows on power up
+* Set the firewall to allow incoming FTP connections from the camera(s)
+* Set Windows Updates to occur at an innocuous time
+* Set up remote access

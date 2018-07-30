@@ -40,7 +40,7 @@ Affero GPL 3.0 license.  If the Affero GPL license does not meet your
 needs, other licensing arrangements are available from
 Neighborhood Guard, Inc.
 
-###Contact Information###
+### Contact Information ###
 If you have questions about this software, please contact:
 
 Douglas Kerr, dougk at halekerr dot com, Board member for Software
