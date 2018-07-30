@@ -2,7 +2,7 @@
 The FTP_Upload package comes with a mechanism to allow remote access to the
 upload machine even though it may behind a NAT firewall.
 
-Currently this package contains Linux shell script to access the upload machine
+Currently, this package contains a Linux shell script to access the upload machine
 from another Linux machine. 
 A Windows batch-file version has been prototyped and
 is expected to be available in the near future.
@@ -37,8 +37,8 @@ your home directory, and change its name to `starttunnel`.  For example,
 The `starttunnel` script will give you SSH command-line access to the
 upload machine. It will create a "tunnel" from your client machine, through
 the cloud server to the upload machine. On the client machine, the tunnel will
-terminate in a TCP port that you specify.  Once the tunnel is created,
-you can connect your SSH client to the specified TCP port in order to get
+terminate in a TCP port that you select.  Once the tunnel is created,
+you can connect your SSH client to the selected TCP port in order to get
 command line access to the upload machine.  You can pick any port number
 between 1025 and 49151.
 
@@ -51,7 +51,8 @@ The syntax for the starttunnel command is,
 >
 
 The name of the upload machine is the name you specified during
-the installation process.  So, if the name of the upload machine is "carnaby,"
+the FTP_Upload installation process.
+So, if the name of the upload machine is "carnaby,"
 and you want to use port 22222 on your local client machine, you would
 give the command,
 
