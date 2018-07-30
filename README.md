@@ -27,7 +27,7 @@ The FTP_Upload software package includes a remote access mechanism that
 allows users to connect to and manage
 the upload machine from anywhere on the Internet
 even though the upload machine is likely behind a NAT firewall.
-Please see the [Remote Access](FTP_Upload/RemoteAccess.md)
+Please see the [Remote Access](FTP_Upload/doc/RemoteAccess.md)
 documentation in the `FTP_Upload/doc` directory.
 
 ### Developer Information ###
