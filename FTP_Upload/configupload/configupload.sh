@@ -72,6 +72,8 @@ initd_dir=/etc/init.d
 tun_code_dir=/opt/cktunnel
 tun_config_dir=/etc/opt/cktunnel
 systemd_dir=/lib/systemd/system
+fac_code_dir=/opt/findaxiscam
+fac_link_dir=/usr/local/bin
 
 # log file for this script
 scriptlog=configupload.log
@@ -145,6 +147,7 @@ configure() {
     create_dir $proc_dir
     create_dir $tun_code_dir
     create_dir $tun_config_dir
+    create_dir $fac_code_dir
 
     # install the current ftp_upload source from local directories
     #
@@ -157,6 +160,11 @@ configure() {
     chmod +x $tun_code_dir/cktunnel
     cp $our_dir/../configupload/utils.sh $tun_code_dir
     cp $our_dir/../tunnel/cktunnel_example.conf $tun_config_dir
+    fac=findaxiscam
+    cp $our_dir/../findaxiscam/findaxiscam.sh $fac_code_dir/$fac
+    chmod 755 $fac_code_dir/$fac
+    chown root:root $fac_code_dir/$fac
+    ln -s $fac_code_dir/$fac $fac_link_dir/$fac
 
     # install the ftp_upload init script
     #
