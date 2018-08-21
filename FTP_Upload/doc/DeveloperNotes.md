@@ -48,9 +48,11 @@ This is not
 really a "remote" access test, but it does check the functionality of the tunnel
 system.
 
+The third and fourth tests check `findaxiscam` and its associated manual page.
+
 At the end of the test run, you should see the following:
 
-    Ran 2 tests.
+    Ran 4 tests.
     
     OK
 
