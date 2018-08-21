@@ -115,6 +115,8 @@ configure() {
     local hostname="`get_config $cfg um_name`"
     hostnamectl set-hostname $hostname
     sed -i "s/127\\.0\\.1\\.1.*$/127.0.1.1\t$hostname/" /etc/hosts
+    # restart the daemons that advertise our name; this list may be incomplete
+    systemctl restart avahi-daemon.service systemd-logind.service
     
     task="updating the available system software listing"
     echo "***** $task" | tee /dev/tty
@@ -136,6 +138,7 @@ configure() {
     # install all the required packages
     local pkgs="openssh-server sshpass tightvncserver proftpd samba shunit2"
     install_wait "$pkgs"    # info output to log
+    systemctl restart nmbd  # restart in case nmbd was already installed
 
     # create the ftp_upload directories for code, log and images
     #
@@ -170,9 +173,9 @@ configure() {
     cp $our_dir/../findaxiscam/findaxiscam.sh $fac_code_dir/$fac
     chmod 755 $fac_code_dir/$fac
     chown root:root $fac_code_dir/$fac
-    ln -s $fac_code_dir/$fac $fac_link_dir/$fac
+    ln -sf $fac_code_dir/$fac $fac_link_dir/$fac
     cp $our_dir/../findaxiscam/man/$fac.1 $fac_man_dir
-    ln -s $fac_man_dir/$fac.1 $fac_lman_dir
+    ln -sf $fac_man_dir/$fac.1 $fac_lman_dir
     mandb
 
     # install the ftp_upload init script

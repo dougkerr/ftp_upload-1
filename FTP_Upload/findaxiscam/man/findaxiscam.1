@@ -8,12 +8,13 @@ findaxiscam \- Find Axis IP cameras on the local network
 Find Axis IP cameras on the local network and print a one-line summary for
 each camera found to the standard output. 
 .PP
-Each summary line consists of the IP address of the camera, the name of the
-camera and it's description.
+Each summary line consists of the IP address of the camera,
+its fully qualified host name
+and its advertised service name.
 findaxiscam uses \fBavahi-browse\fR to find the cameras via mDNS-SD.
 The second and third fields are as returned by \fBavahi-browse\fR.
 All three fields in the summary line are separated by spaces,
-and the description field may contain spaces.
+and the service name field may contain spaces.
 .SH AUTHOR
 Written by Douglas Kerr.
 .SH COPYRIGHT
