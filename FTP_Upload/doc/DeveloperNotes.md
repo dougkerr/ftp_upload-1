@@ -7,7 +7,7 @@ Additionally, the tunnel daemon, `cktunnel` and `ftp_upload` program
 are now run as Linux services.
 
 In release v2.1.0, we added the `findaxiscam` utility, along with its manual
-page, to find Axis IP cameras on the local netwokr.
+page, to find Axis IP cameras on the local network.
 
 ## Unit and System Tests ##
 ### Overview ###
