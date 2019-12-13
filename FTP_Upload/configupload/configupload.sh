@@ -321,6 +321,9 @@ main() {
     # get the name of the config file
     local cfile=`find_config`
 
+    # insure the log file's directory exists
+    mkdir --parents `dirname "$cfile"`
+
     # Get the config info from the user.
     # Exit if the user cancels
     #
