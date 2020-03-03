@@ -164,6 +164,7 @@ configure() {
     create_dir $proc_dir
     create_dir $tun_code_dir
     create_dir $tun_config_dir
+    create_dir $addrt_code_dir
     create_dir $fac_code_dir
     create_dir $fac_man_dir
     create_dir $fac_lman_dir
